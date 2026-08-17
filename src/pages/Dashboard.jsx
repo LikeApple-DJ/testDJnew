@@ -12,6 +12,11 @@ const TABS = [
 
 export default function Dashboard() {
   const [activeKey, setActiveKey] = useState('hello');
+  const [results, setResults] = useState({});
+
+  const handleResult = (tabKey, data) => {
+    setResults((prev) => ({ ...prev, [tabKey]: data }));
+  };
 
   const ActiveComponent = TABS.find((t) => t.key === activeKey).component;
 
@@ -29,11 +34,11 @@ export default function Dashboard() {
           </button>
         ))}
         <div className="export-wrapper">
-          <ExportButton activeTab={activeKey} />
+          <ExportButton activeTab={activeKey} resultData={results[activeKey]} />
         </div>
       </div>
       <div className="tab-panel">
-        <ActiveComponent />
+        <ActiveComponent onResult={(data) => handleResult(activeKey, data)} />
       </div>
     </div>
   );

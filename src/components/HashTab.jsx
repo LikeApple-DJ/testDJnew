@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { callHash } from '../services/api';
 
-export default function HashTab() {
+export default function HashTab({ onResult }) {
   const [input, setInput] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -11,8 +11,11 @@ export default function HashTab() {
     try {
       const res = await callHash(input);
       setResult(res.data);
+      if (onResult) onResult(res.data);
     } catch (err) {
-      setResult({ error: err.message || 'Request failed' });
+      const errData = { error: err.message || 'Request failed' };
+      setResult(errData);
+      if (onResult) onResult(errData);
     } finally {
       setLoading(false);
     }

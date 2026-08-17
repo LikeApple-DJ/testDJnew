@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { exportTab } from '../services/api';
 
-export default function ExportButton({ activeTab }) {
+export default function ExportButton({ activeTab, resultData }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -13,7 +13,7 @@ export default function ExportButton({ activeTab }) {
     setLoading(true);
     setMessage('');
     try {
-      const res = await exportTab(activeTab);
+      const res = await exportTab(activeTab, resultData);
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

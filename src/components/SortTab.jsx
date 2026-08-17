@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { callBubbleSort } from '../services/api';
 
-export default function SortTab() {
+export default function SortTab({ onResult }) {
   const [arrayInput, setArrayInput] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,8 +15,11 @@ export default function SortTab() {
         .filter((n) => !isNaN(n));
       const res = await callBubbleSort(arr);
       setResult(res.data);
+      if (onResult) onResult(res.data);
     } catch (err) {
-      setResult({ error: err.message || 'Request failed' });
+      const errData = { error: err.message || 'Request failed' };
+      setResult(errData);
+      if (onResult) onResult(errData);
     } finally {
       setLoading(false);
     }

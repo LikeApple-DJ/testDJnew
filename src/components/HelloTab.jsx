@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { callHello } from '../services/api';
 
-export default function HelloTab() {
+export default function HelloTab({ onResult }) {
   const [name, setName] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -11,8 +11,11 @@ export default function HelloTab() {
     try {
       const res = await callHello(name);
       setResult(res.data);
+      if (onResult) onResult(res.data);
     } catch (err) {
-      setResult({ error: err.message || 'Request failed' });
+      const errData = { error: err.message || 'Request failed' };
+      setResult(errData);
+      if (onResult) onResult(errData);
     } finally {
       setLoading(false);
     }

@@ -20,6 +20,6 @@ export function callBubbleSort(array) {
   return api.post('/bubble-sort', { array });
 }
 
-export function exportTab(tab) {
-  return api.post('/export', { tab }, { responseType: 'blob' });
+export function exportTab(tab, resultData) {
+  return api.post('/export', { tab, resultData }, { responseType: 'blob' });
 }
