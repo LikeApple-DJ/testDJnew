@@ -30,13 +30,25 @@ import SortPanel from './SortPanel.vue'
 
 const activeTab = ref('hello')
 const exportLoading = ref(false)
+const helloRef = ref(null)
+const hashRef = ref(null)
+const sortRef = ref(null)
 
 async function handleExport() {
   exportLoading.value = true
   try {
-    const typeMap = { hello: 'hello', hash: 'hash', sort: 'sort' }
-    const type = typeMap[activeTab.value] || 'hello'
-    const res = await exportData(type)
+    const type = activeTab.value
+    // 根据当前 Tab 获取对应组件的展示数据，传递给导出接口
+    const params = { type }
+    if (type === 'hash' && hashRef.value?.data) {
+      params.input = hashRef.value.data.input
+      params.hash = hashRef.value.data.hash
+    } else if (type === 'sort' && sortRef.value?.data) {
+      params.original = sortRef.value.data.originalArray.join(',')
+      params.sorted = sortRef.value.data.sortedArray.join(',')
+      params.swaps = sortRef.value.data.swapCount
+    }
+    const res = await exportData(params)
     // 创建下载链接
     const url = window.URL.createObjectURL(new Blob([res.data]))
     const link = document.createElement('a')

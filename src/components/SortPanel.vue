@@ -55,6 +55,9 @@ async function fetchSort() {
     loading.value = false
   }
 }
+
+// 暴露排序结果数据，供父组件导出时使用
+defineExpose({ data })
 </script>
 
 <style scoped>

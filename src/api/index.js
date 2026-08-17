@@ -21,9 +21,9 @@ export function getBubbleSort(params = {}) {
 }
 
 // 导出接口
-export function exportData(type) {
+export function exportData(params) {
   return api.get('/export', {
-    params: { type },
+    params: params,
     responseType: 'blob'
   })
 }

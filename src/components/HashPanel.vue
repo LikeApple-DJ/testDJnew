@@ -29,7 +29,8 @@ async function fetchHash() {
   if (!inputText.value) return
   loading.value = true
   try {
-    const res = await getHash(inputText.value)
+    // 对输入做 trim 处理，避免意外的空格导致哈希结果不一致
+    const res = await getHash(inputText.value.trim())
     data.value = res.data
   } catch (e) {
     ElMessage.error('请求失败: ' + e.message)
@@ -37,6 +38,9 @@ async function fetchHash() {
     loading.value = false
   }
 }
+
+// 暴露数据和输入文本，供父组件导出时使用
+defineExpose({ data, inputText })
 </script>
 
 <style scoped>

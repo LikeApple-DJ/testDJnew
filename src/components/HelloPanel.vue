@@ -29,6 +29,9 @@ async function fetchHello() {
     loading.value = false
   }
 }
+
+// 暴露数据和导出所需的方法，供父组件调用
+defineExpose({ data })
 </script>
 
 <style scoped>
