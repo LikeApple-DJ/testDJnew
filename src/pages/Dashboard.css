@@ -1,0 +1,36 @@
+.dashboard-container {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+}
+
+.dashboard-cards {
+  margin-bottom: 24px;
+}
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.dashboard-chart-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+}
