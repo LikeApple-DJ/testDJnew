@@ -93,6 +93,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest request) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("员工不存在: " + id));
+
+        // Check employeeNo uniqueness if it changed
+        if (!employee.getEmployeeNo().equals(request.getEmployeeNo())
+                && employeeRepository.existsByEmployeeNo(request.getEmployeeNo())) {
+            throw new RuntimeException("工号已存在: " + request.getEmployeeNo());
+        }
+
         employee.setName(request.getName());
         employee.setEmployeeNo(request.getEmployeeNo());
         employee.setDepartment(request.getDepartment());

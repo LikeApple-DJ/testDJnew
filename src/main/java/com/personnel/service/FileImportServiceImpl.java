@@ -25,6 +25,7 @@ import java.util.List;
 public class FileImportServiceImpl implements FileImportService {
 
     private final EmployeeRepository employeeRepository;
+    private final WhitelistService whitelistService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @Override
@@ -103,8 +104,9 @@ public class FileImportServiceImpl implements FileImportService {
                 if (row == null) continue;
                 totalRows++;
                 try {
-                    String[] fields = new String[15];
-                    for (int j = 0; j < 15; j++) {
+                    int colCount = Math.max(row.getLastCellNum(), 5);
+                    String[] fields = new String[colCount];
+                    for (int j = 0; j < colCount; j++) {
                         Cell cell = row.getCell(j);
                         fields[j] = getCellValueAsString(cell);
                     }
@@ -160,6 +162,15 @@ public class FileImportServiceImpl implements FileImportService {
             return null;
         }
 
+        // Check whitelist - department must be allowed for import
+        if (!whitelistService.isDepartmentAllowedForImport(department.trim())) {
+            errors.add(ImportError.builder()
+                    .row(rowNum).column("部门")
+                    .message("该部门不在导入白名单中: " + department)
+                    .build());
+            return null;
+        }
+
         if (employeeRepository.existsByEmployeeNo(employeeNo.trim())) {
             errors.add(ImportError.builder().row(rowNum).column("工号").message("工号已存在: " + employeeNo).build());
             return null;
@@ -193,7 +204,11 @@ public class FileImportServiceImpl implements FileImportService {
         if (fields.length > 11 && fields[11] != null && !fields[11].isBlank()) {
             try {
                 employee.setContractEndDate(LocalDate.parse(fields[11].trim(), DATE_FORMATTER));
-            } catch (DateTimeParseException ignored) {
+            } catch (DateTimeParseException e) {
+                errors.add(ImportError.builder()
+                        .row(rowNum).column("合同到期日")
+                        .message("合同到期日格式错误，需为 yyyy-MM-dd: " + fields[11])
+                        .build());
             }
         }
 
@@ -221,9 +236,17 @@ public class FileImportServiceImpl implements FileImportService {
         List<String> fields = new ArrayList<>();
         boolean inQuotes = false;
         StringBuilder current = new StringBuilder();
-        for (char c : line.toCharArray()) {
+        char[] chars = line.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
             if (c == '"') {
-                inQuotes = !inQuotes;
+                // Handle escaped quotes: "" inside a quoted field
+                if (inQuotes && i + 1 < chars.length && chars[i + 1] == '"') {
+                    current.append('"');
+                    i++; // skip next quote
+                } else {
+                    inQuotes = !inQuotes;
+                }
             } else if (c == ',' && !inQuotes) {
                 fields.add(current.toString().trim());
                 current = new StringBuilder();
