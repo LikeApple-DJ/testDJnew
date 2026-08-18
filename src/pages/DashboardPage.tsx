@@ -3,12 +3,12 @@ import { Typography } from 'antd';
 import AlgorithmTabs from '../components/AlgorithmTabs';
 import ExportButton from '../components/ExportButton';
 import MetricsPanel from '../components/MetricsPanel';
-import type { TabKey, HelloWorldData, HashData, BubbleSortData } from '../types';
+import type { TabKey, HelloWorldData, HashData, BubbleSortData, WeatherResponse } from '../types';
 import '../styles/dashboard.css';
 
 const { Title } = Typography;
 
-type TabResult = HelloWorldData | HashData | BubbleSortData | null;
+type TabResult = HelloWorldData | HashData | BubbleSortData | WeatherResponse | null;
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('helloworld');
@@ -16,6 +16,7 @@ export default function DashboardPage() {
     helloworld: null,
     hash: null,
     bubblesort: null,
+    weather: null,
   });
 
   const handleResult = useCallback((tab: TabKey, data: TabResult) => {

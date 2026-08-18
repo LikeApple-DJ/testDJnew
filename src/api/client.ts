@@ -4,6 +4,7 @@ import type {
   HashData,
   BubbleSortData,
   MetricsResponse,
+  WeatherResponse,
   Dimension,
 } from '../types';
 
@@ -76,4 +77,10 @@ export async function fetchMetrics(
   if (startDate) params.set('startDate', startDate);
   if (endDate) params.set('endDate', endDate);
   return request<MetricsResponse>(`/metrics?${params.toString()}`);
+}
+
+export async function fetchWeather(
+  city: string = 'hangzhou'
+): Promise<ApiResult<WeatherResponse>> {
+  return request<WeatherResponse>(`/weather?city=${encodeURIComponent(city)}`);
 }

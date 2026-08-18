@@ -2,12 +2,13 @@ import { Tabs } from 'antd';
 import HelloWorldTab from './HelloWorldTab';
 import HashTab from './HashTab';
 import BubbleSortTab from './BubbleSortTab';
-import type { TabKey, HelloWorldData, HashData, BubbleSortData } from '../types';
+import WeatherTab from './WeatherTab';
+import type { TabKey, HelloWorldData, HashData, BubbleSortData, WeatherResponse } from '../types';
 
 interface Props {
   activeTab: TabKey;
   onTabChange: (tab: TabKey) => void;
-  onResult: (tab: TabKey, data: HelloWorldData | HashData | BubbleSortData) => void;
+  onResult: (tab: TabKey, data: HelloWorldData | HashData | BubbleSortData | WeatherResponse) => void;
 }
 
 export default function AlgorithmTabs({ activeTab, onTabChange, onResult }: Props) {
@@ -26,6 +27,11 @@ export default function AlgorithmTabs({ activeTab, onTabChange, onResult }: Prop
       key: 'bubblesort',
       label: '冒泡排序',
       children: <BubbleSortTab onResult={(d) => onResult('bubblesort', d)} />,
+    },
+    {
+      key: 'weather',
+      label: '🌤️ 天气顾问',
+      children: <WeatherTab onResult={(d) => onResult('weather', d)} />,
     },
   ];
 

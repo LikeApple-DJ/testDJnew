@@ -44,7 +44,26 @@ export interface MetricsResponse {
   totalCalls: number;
 }
 
+// Weather
+export interface WeatherDay {
+  date: string;
+  weekDay: string;
+  weather: string;
+  highTemp: number;
+  lowTemp: number;
+  rating: string;
+  suggestion: string;
+}
+
+export interface WeatherResponse {
+  city: string;
+  updateTime: string;
+  days: WeatherDay[];
+  dressAdvice: string;
+  outdoorStrategy: string;
+}
+
 // 页面状态
-export type TabKey = 'helloworld' | 'hash' | 'bubblesort';
+export type TabKey = 'helloworld' | 'hash' | 'bubblesort' | 'weather';
 export type Dimension = 'personType' | 'level' | 'department';
 export type ChartType = 'line' | 'pie' | 'bar';
