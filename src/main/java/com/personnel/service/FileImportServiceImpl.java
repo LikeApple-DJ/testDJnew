@@ -5,6 +5,7 @@ import com.personnel.dto.ImportResult;
 import com.personnel.entity.Employee;
 import com.personnel.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,7 @@ public class FileImportServiceImpl implements FileImportService {
         if (filename.endsWith(".csv")) {
             return importCsv(file);
         } else if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
-            return importExcel(file);
+            return importExcel(file, filename);
         } else {
             throw new RuntimeException("不支持的文件格式，请上传 CSV 或 Excel 文件");
         }
@@ -88,12 +89,14 @@ public class FileImportServiceImpl implements FileImportService {
                 .build();
     }
 
-    private ImportResult importExcel(MultipartFile file) {
+    private ImportResult importExcel(MultipartFile file, String filename) {
         List<ImportError> errors = new ArrayList<>();
         int totalRows = 0;
         int successRows = 0;
 
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        try (Workbook workbook = filename.toLowerCase().endsWith(".xlsx")
+                ? new XSSFWorkbook(file.getInputStream())
+                : new HSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet.getPhysicalNumberOfRows() <= 1) {
                 return ImportResult.builder().totalRows(0).successRows(0).failedRows(0).errors(errors).build();
@@ -184,6 +187,18 @@ public class FileImportServiceImpl implements FileImportService {
             return null;
         }
 
+        LocalDate contractEndDate = null;
+        if (fields.length > 11 && fields[11] != null && !fields[11].isBlank()) {
+            try {
+                contractEndDate = LocalDate.parse(fields[11].trim(), DATE_FORMATTER);
+            } catch (DateTimeParseException e) {
+                errors.add(ImportError.builder()
+                        .row(rowNum).column("合同到期日")
+                        .message("合同到期日格式错误，需为 yyyy-MM-dd: " + fields[11])
+                        .build());
+            }
+        }
+
         Employee employee = Employee.builder()
                 .name(name.trim())
                 .employeeNo(employeeNo.trim())
@@ -196,21 +211,11 @@ public class FileImportServiceImpl implements FileImportService {
                 .bankAccount(safeGet(fields, 8))
                 .education(safeGet(fields, 9))
                 .skills(safeGet(fields, 10))
+                .contractEndDate(contractEndDate)
                 .address(safeGet(fields, 12))
                 .emergencyContact(safeGet(fields, 13))
                 .emergencyPhone(safeGet(fields, 14))
                 .build();
-
-        if (fields.length > 11 && fields[11] != null && !fields[11].isBlank()) {
-            try {
-                employee.setContractEndDate(LocalDate.parse(fields[11].trim(), DATE_FORMATTER));
-            } catch (DateTimeParseException e) {
-                errors.add(ImportError.builder()
-                        .row(rowNum).column("合同到期日")
-                        .message("合同到期日格式错误，需为 yyyy-MM-dd: " + fields[11])
-                        .build());
-            }
-        }
 
         return employee;
     }
