@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 @Data
@@ -12,8 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 public class WeatherResponse {
     private String city;
-    private String updateTime;
+    private String updateDate;
     private List<DailyForecast> forecasts;
+    private boolean fallback;
 
     @Data
     @Builder
