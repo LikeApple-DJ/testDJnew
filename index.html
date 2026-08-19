@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo 展示平台</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Demo 展示平台</h1>
+            <p class="subtitle">HelloWorld · 哈希算法 · 冒泡排序</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="helloworld">Hello World</button>
+            <button class="tab-btn" data-tab="hash">哈希算法</button>
+            <button class="tab-btn" data-tab="bubble-sort">冒泡排序</button>
+        </div>
+
+        <!-- Export Button -->
+        <div class="export-bar">
+            <button class="export-btn" id="exportBtn">📥 导出当前页面结果</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Tab 1: Hello World -->
+            <div class="tab-pane active" id="tab-helloworld">
+                <div class="card">
+                    <h2>Hello World 接口</h2>
+                    <p class="desc">调用后端 HelloWorld 接口，获取返回结果。</p>
+                    <button class="action-btn" id="btn-helloworld">调用接口</button>
+                    <div class="result-area" id="result-helloworld">
+                        <div class="placeholder">点击按钮调用接口查看结果...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Hash Algorithm -->
+            <div class="tab-pane" id="tab-hash">
+                <div class="card">
+                    <h2>哈希算法接口</h2>
+                    <p class="desc">输入文本，选择哈希算法，计算摘要值。</p>
+                    <div class="input-group">
+                        <label for="hash-input">输入文本：</label>
+                        <input type="text" id="hash-input" value="Hello World" placeholder="请输入要哈希的文本">
+                    </div>
+                    <div class="input-group">
+                        <label for="hash-algo">算法：</label>
+                        <select id="hash-algo">
+                            <option value="md5">MD5</option>
+                            <option value="sha1">SHA-1</option>
+                            <option value="sha256" selected>SHA-256</option>
+                            <option value="sha512">SHA-512</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" id="btn-hash">计算哈希</button>
+                    <div class="result-area" id="result-hash">
+                        <div class="placeholder">点击按钮计算哈希值...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Bubble Sort -->
+            <div class="tab-pane" id="tab-bubble-sort">
+                <div class="card">
+                    <h2>冒泡排序接口</h2>
+                    <p class="desc">输入一组数字，使用冒泡排序进行排序，展示每步过程。</p>
+                    <div class="input-group">
+                        <label for="sort-input">输入数组（逗号分隔）：</label>
+                        <input type="text" id="sort-input" value="64, 34, 25, 12, 22, 11, 90" placeholder="例如: 5, 3, 8, 1, 9">
+                    </div>
+                    <button class="action-btn" id="btn-bubble-sort">开始排序</button>
+                    <div class="result-area" id="result-bubble-sort">
+                        <div class="placeholder">点击按钮开始排序...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by FastAPI + Vanilla JS | Demo Platform v1.0</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
