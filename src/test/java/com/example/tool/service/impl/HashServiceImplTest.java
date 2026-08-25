@@ -76,11 +76,11 @@ class HashServiceImplTest {
     }
 
     @Test
-    @DisplayName("空字符串哈希计算正常")
-    void should_computeHash_when_emptyInput() {
-        String result = hashService.computeHash("", HashAlgorithmEnum.SHA256);
-
-        assertThat(result).isNotBlank();
+    @DisplayName("空字符串抛出 BusinessException")
+    void should_throwException_when_emptyInput() {
+        assertThatThrownBy(() -> hashService.computeHash("", HashAlgorithmEnum.SHA256))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("输入不能为空");
     }
 
     @Test
@@ -89,13 +89,5 @@ class HashServiceImplTest {
         assertThatThrownBy(() -> hashService.computeHash(null, HashAlgorithmEnum.SHA256))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("输入不能为空");
-    }
-
-    @Test
-    @DisplayName("null 算法抛出 BusinessException")
-    void should_throwException_when_nullAlgorithm() {
-        assertThatThrownBy(() -> hashService.computeHash("hello", null))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("不支持的哈希算法");
     }
 }

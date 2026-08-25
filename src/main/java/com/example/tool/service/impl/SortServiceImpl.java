@@ -1,6 +1,7 @@
 package com.example.tool.service.impl;
 
 import com.example.tool.common.exception.BusinessException;
+import com.example.tool.model.vo.SortResultVO;
 import com.example.tool.service.SortService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ public class SortServiceImpl implements SortService {
     private static final int MAX_ARRAY_LENGTH = 1000;
 
     @Override
-    public SortResult bubbleSort(int[] array) {
+    public SortResultVO bubbleSort(int[] array) {
         if (array == null || array.length == 0) {
             throw new BusinessException("TOOL_003", "数组不能为空");
         }
@@ -51,43 +52,10 @@ public class SortServiceImpl implements SortService {
             logger.debug("冒泡排序完成: array length={}, steps={}", original.length, steps);
         }
 
-        SortResult result = new SortResult();
+        SortResultVO result = new SortResultVO();
         result.setOriginal(original);
         result.setSorted(sorted);
         result.setSteps(steps);
         return result;
-    }
-
-    /**
-     * 冒泡排序结果。
-     */
-    public static class SortResult {
-        private int[] original;
-        private int[] sorted;
-        private int steps;
-
-        public int[] getOriginal() {
-            return original;
-        }
-
-        public void setOriginal(int[] original) {
-            this.original = original;
-        }
-
-        public int[] getSorted() {
-            return sorted;
-        }
-
-        public void setSorted(int[] sorted) {
-            this.sorted = sorted;
-        }
-
-        public int getSteps() {
-            return steps;
-        }
-
-        public void setSteps(int steps) {
-            this.steps = steps;
-        }
     }
 }

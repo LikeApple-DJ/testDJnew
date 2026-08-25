@@ -1,6 +1,7 @@
 package com.example.tool.service.impl;
 
 import com.example.tool.common.exception.BusinessException;
+import com.example.tool.model.vo.SortResultVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class SortServiceImplTest {
     @DisplayName("正常数组排序")
     void should_sortArray_when_validInput() {
         int[] input = {5, 2, 8, 1, 9};
-        SortServiceImpl.SortResult result = sortService.bubbleSort(input);
+        SortResultVO result = sortService.bubbleSort(input);
 
         assertThat(result.getSorted()).containsExactly(1, 2, 5, 8, 9);
         assertThat(result.getOriginal()).containsExactly(5, 2, 8, 1, 9);
@@ -38,7 +39,7 @@ class SortServiceImplTest {
     @DisplayName("已排序数组")
     void should_returnSameArray_when_alreadySorted() {
         int[] input = {1, 2, 3, 4, 5};
-        SortServiceImpl.SortResult result = sortService.bubbleSort(input);
+        SortResultVO result = sortService.bubbleSort(input);
 
         assertThat(result.getSorted()).containsExactly(1, 2, 3, 4, 5);
     }
@@ -47,7 +48,7 @@ class SortServiceImplTest {
     @DisplayName("单元素数组")
     void should_returnSameArray_when_singleElement() {
         int[] input = {42};
-        SortServiceImpl.SortResult result = sortService.bubbleSort(input);
+        SortResultVO result = sortService.bubbleSort(input);
 
         assertThat(result.getSorted()).containsExactly(42);
         assertThat(result.getSteps()).isZero();
@@ -57,7 +58,7 @@ class SortServiceImplTest {
     @DisplayName("包含重复元素的数组")
     void should_sortArray_when_duplicateElements() {
         int[] input = {3, 1, 3, 2, 1};
-        SortServiceImpl.SortResult result = sortService.bubbleSort(input);
+        SortResultVO result = sortService.bubbleSort(input);
 
         assertThat(result.getSorted()).containsExactly(1, 1, 2, 3, 3);
     }
@@ -66,7 +67,7 @@ class SortServiceImplTest {
     @DisplayName("包含负数的数组")
     void should_sortArray_when_negativeNumbers() {
         int[] input = {-3, 0, 5, -1, 2};
-        SortServiceImpl.SortResult result = sortService.bubbleSort(input);
+        SortResultVO result = sortService.bubbleSort(input);
 
         assertThat(result.getSorted()).containsExactly(-3, -1, 0, 2, 5);
     }

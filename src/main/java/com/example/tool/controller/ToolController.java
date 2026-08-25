@@ -8,7 +8,6 @@ import com.example.tool.model.vo.HashResultVO;
 import com.example.tool.model.vo.SortResultVO;
 import com.example.tool.service.HashService;
 import com.example.tool.service.SortService;
-import com.example.tool.service.impl.SortServiceImpl;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,11 +73,7 @@ public class ToolController {
     @PostMapping("/sort")
     public ApiResponse<SortResultVO> sort(@Valid @RequestBody SortRequest request) {
         logger.info("冒泡排序接口调用: array length={}", request.getArray().length);
-        SortServiceImpl.SortResult sortResult = sortService.bubbleSort(request.getArray());
-        SortResultVO result = new SortResultVO();
-        result.setOriginal(sortResult.getOriginal());
-        result.setSorted(sortResult.getSorted());
-        result.setSteps(sortResult.getSteps());
+        SortResultVO result = sortService.bubbleSort(request.getArray());
         return ApiResponse.success(result);
     }
 }

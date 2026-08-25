@@ -1,8 +1,8 @@
 package com.example.tool.controller;
 
+import com.example.tool.model.vo.SortResultVO;
 import com.example.tool.service.HashService;
 import com.example.tool.service.SortService;
-import com.example.tool.service.impl.SortServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +78,7 @@ class ToolControllerTest {
     @Test
     @DisplayName("POST /api/tool/sort 正常返回排序结果")
     void should_returnSorted_when_validRequest() throws Exception {
-        SortServiceImpl.SortResult mockResult = new SortServiceImpl.SortResult();
+        SortResultVO mockResult = new SortResultVO();
         mockResult.setOriginal(new int[]{5, 2, 8, 1, 9});
         mockResult.setSorted(new int[]{1, 2, 5, 8, 9});
         mockResult.setSteps(10);

@@ -22,11 +22,8 @@ public class HashServiceImpl implements HashService {
 
     @Override
     public String computeHash(String input, HashAlgorithmEnum algorithm) {
-        if (input == null) {
+        if (input == null || input.isEmpty()) {
             throw new BusinessException("TOOL_001", "输入不能为空");
-        }
-        if (algorithm == null) {
-            throw new BusinessException("TOOL_002", "不支持的哈希算法");
         }
 
         try {
