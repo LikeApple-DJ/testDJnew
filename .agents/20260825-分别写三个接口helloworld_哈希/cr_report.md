@@ -1,236 +1,199 @@
 # Code Review Report
 
-> **Change**: 三个接口（HelloWorld、哈希算法、冒泡排序）+ 前端三Tab页面
-> **分支/Commit**: `AI/task-DEV-966dcd0a-7905-11f1-9649-3b4281182f10-83e5e3ce-efb7-4858-a42e-c258b8ac9e22` (base: `main`)
-> **日期**: 2026-08-25
-> **审查者**: AI (DTCoder)
-> **审查范围**: testDJnew 后端 Java 代码（15 个 .java 文件）
+> **Change** 问题修复（三个接口 HelloWorld/哈希/冒泡排序） · **分支** `AI/task-DEV-966dcd0a-7905-11f1-9649-3b4281182f10-83e5e3ce-efb7-4858-a42e-c258b8ac9e22` · **日期** 2026-08-25 · **审查者** AI
 
 ---
 
-## §1 审查概要
+## §1 审查范围
 
-| 维度 | 结果 |
-|------|------|
-| 审查文件数 | 15 |
-| P0 (阻塞) | **2** |
-| P1 (推荐) | 3 |
-| P2 (参考) | 1 |
-| 总体结论 | ❌ 不建议合并 — 存在 2 个 P0 阻塞项必须修复 |
+| # | 文件 | 类型 | 状态 |
+|---|------|------|------|
+| 1 | `src/main/java/com/example/tool/common/config/CorsConfig.java` | 配置 | ✅ 已审 |
+| 2 | `src/main/java/com/example/tool/common/exception/GlobalExceptionHandler.java` | 异常处理 | ⚠️ 已审有问题 |
+| 3 | `src/main/java/com/example/tool/constant/HashAlgorithmEnum.java` | 枚举 | ✅ 已审 |
+| 4 | `src/main/java/com/example/tool/controller/ToolController.java` | 控制器 | ✅ 已审 |
+| 5 | `src/main/java/com/example/tool/service/SortService.java` | 接口 | ✅ 已审 |
+| 6 | `src/main/java/com/example/tool/service/impl/HashServiceImpl.java` | 服务实现 | ⚠️ 已审有问题 |
+| 7 | `src/main/java/com/example/tool/service/impl/SortServiceImpl.java` | 服务实现 | ✅ 已审 |
+| 8 | `src/test/java/com/example/tool/controller/ToolControllerTest.java` | 测试 | ✅ 已审 |
+| 9 | `src/test/java/com/example/tool/service/impl/HashServiceImplTest.java` | 测试 | ✅ 已审 |
+| 10 | `src/test/java/com/example/tool/service/impl/SortServiceImplTest.java` | 测试 | ✅ 已审 |
 
-**核心问题**：错误码映射链路断裂——`@Valid` 校验失败和 `HashAlgorithmEnum.fromName()` 抛出的 `IllegalArgumentException` 均被全局兜底异常处理器捕获，统一返回 `TOOL_999`，与设计文档约定的 `TOOL_001/002/003/004` 不一致。
-
----
-
-## §2 审查范围 — 执行队列
-
-| 序号 | 文件 | 状态 |
-|------|------|------|
-| 1 | `src/main/java/com/example/tool/ToolApplication.java` | ✅ 已审 |
-| 2 | `src/main/java/com/example/tool/common/ApiResponse.java` | ✅ 已审 |
-| 3 | `src/main/java/com/example/tool/common/config/CorsConfig.java` | ✅ 已审 |
-| 4 | `src/main/java/com/example/tool/common/exception/BusinessException.java` | ✅ 已审 |
-| 5 | `src/main/java/com/example/tool/common/exception/GlobalExceptionHandler.java` | ⚠️ 已审有问题 |
-| 6 | `src/main/java/com/example/tool/constant/HashAlgorithmEnum.java` | ⚠️ 已审有问题 |
-| 7 | `src/main/java/com/example/tool/controller/ToolController.java` | ⚠️ 已审有问题 |
-| 8 | `src/main/java/com/example/tool/model/dto/HashRequest.java` | ✅ 已审 |
-| 9 | `src/main/java/com/example/tool/model/dto/SortRequest.java` | ✅ 已审 |
-| 10 | `src/main/java/com/example/tool/model/vo/HashResultVO.java` | ✅ 已审 |
-| 11 | `src/main/java/com/example/tool/model/vo/SortResultVO.java` | ✅ 已审 |
-| 12 | `src/main/java/com/example/tool/service/HashService.java` | ✅ 已审 |
-| 13 | `src/main/java/com/example/tool/service/SortService.java` | ⚠️ 已审有问题 |
-| 14 | `src/main/java/com/example/tool/service/impl/HashServiceImpl.java` | ✅ 已审 |
-| 15 | `src/main/java/com/example/tool/service/impl/SortServiceImpl.java` | ✅ 已审 |
+**变更概要**：本阶段为问题修复（review 阶段），主要改动包括：
+- CORS 配置从通配符 `*` 收紧为具体域名（安全加固）
+- 全局异常处理器新增 `MethodArgumentNotValidException` 和 `IllegalArgumentException` 处理
+- `HashAlgorithmEnum.fromName()` 对 null/blank 输入默认返回 SHA256（防御性编程）
+- `SortService` 接口返回类型从内部类 `SortServiceImpl.SortResult` 提升为独立 VO `SortResultVO`（解耦）
+- `ToolController.sort()` 简化，直接返回 VO 而非手动转换
+- 测试用例同步更新，空字符串校验行为从"正常计算"修正为"抛出异常"
 
 ---
 
-## §3 功能性检查（Step 2）
+## §2 功能性检查（Step 2）
 
-### REQ 对照表
+### 需求对照
 
-| REQ | 来源 | 关联文件 | 状态 | 说明 |
-|-----|------|----------|------|------|
-| F01 — HelloWorld GET /api/tool/helloworld 返回问候语 | design.md §5.1.2 W01 | ToolController.java:48-51 | ✅ 满足 | 返回 `{"code":"OK","msg":"SUCCESS","data":{"message":"Hello, World!"}}`，与 spec 一致 |
-| F02 — 哈希 POST /api/tool/hash 计算哈希值 | design.md §5.1.2 W02 | ToolController.java:59-66, HashServiceImpl.java:24-53, HashAlgorithmEnum.java:31-41 | ❌ P0 | 错误码映射断裂（详见 §3.1） |
-| F03 — 冒泡排序 POST /api/tool/sort | design.md §5.1.2 W03 | ToolController.java:74-83, SortServiceImpl.java:21-59 | ❌ P0 | 错误码映射断裂（详见 §3.1） |
-| R01 — input 不能为 null 或空字符串 → TOOL_001 | design.md §5.1.3.2 R01 | HashRequest.java:12, GlobalExceptionHandler.java:37-41 | ❌ P0 | `@NotBlank` 校验失败后走兜底异常 → 返回 TOOL_999 |
-| R02 — algorithm 不支持 → TOOL_002 | design.md §5.1.3.2 R02 | HashAlgorithmEnum.java:40, GlobalExceptionHandler.java:37-41 | ❌ P0 | `IllegalArgumentException` → 返回 TOOL_999 |
-| R03 — array 不能为 null 或空数组 → TOOL_003 | design.md §5.1.3.3 R03 | SortRequest.java:13, GlobalExceptionHandler.java:37-41 | ❌ P0 | `@NotEmpty` 校验失败后走兜底异常 → 返回 TOOL_999 |
-| R04 — array 长度 ≤ 1000 → TOOL_004 | design.md §5.1.3.3 R04 | SortRequest.java:14, GlobalExceptionHandler.java:37-41 | ❌ P0 | `@Size` 校验失败后走兜底异常 → 返回 TOOL_999 |
+| REQ | 来源 | 描述 | 关联文件 | 结果 |
+|-----|------|------|----------|------|
+| F01 | design.md L40 | HelloWorld 接口返回问候语 | ToolController.java | ✅ |
+| F02 | design.md L41 | 哈希算法接口，输入校验 + 算法选择 | HashServiceImpl.java, HashAlgorithmEnum.java, GlobalExceptionHandler.java | ✅ |
+| F03 | design.md L42 | 冒泡排序接口，输入校验 + 长度限制 | SortServiceImpl.java, SortService.java, GlobalExceptionHandler.java | ❌ P0 |
+| F04 | design.md L43 | 前端三Tab页面 | ykstest（非 Java，跳过） | N/A |
+| F05 | design.md L44 | 前端调用后端接口 | ykstest（非 Java，跳过） | N/A |
 
-### §3.1 P0 详细分析：错误码映射链路断裂
+### 功能点详细核对
 
-**问题描述**：设计文档明确要求四种错误码返回（TOOL_001/002/003/004），但实际有两条校验路径的异常未被正确映射：
+#### F01 — HelloWorld 接口 ✅
+- 设计文档 §5.1.3.1：GET /api/tool/helloworld，返回 `{"code":"OK","msg":"SUCCESS","data":{"message":"Hello, World!"}}`
+- 代码证据：`ToolController.java:46-50` — `@GetMapping("/helloworld")` 返回 `ApiResponse.success(Map.of("message", "Hello, World!"))`
+- 测试证据：`ToolControllerTest.java:42-48` — 验证 `$.data.message` = `"Hello, World!"`
+- 结论：**满足设计**
 
-**路径 1 — Jakarta Validation 失败**：
-```
-请求 → Controller @Valid → MethodArgumentNotValidException →
-GlobalExceptionHandler.handleException() → ApiResponse.error("TOOL_999", "系统内部错误")
-```
-- `HashRequest.@NotBlank` 失败 → 应返回 TOOL_001，实际返回 TOOL_999
-- `SortRequest.@NotEmpty` 失败 → 应返回 TOOL_003，实际返回 TOOL_999
-- `SortRequest.@Size` 失败 → 应返回 TOOL_004，实际返回 TOOL_999
+#### F02 — 哈希算法接口 ✅
+- 设计文档 §5.1.3.2：POST /api/tool/hash，input 非空校验（R01），algorithm 白名单校验（R02）
+- 代码证据：
+  - `HashRequest.java:12` — `@NotBlank` 校验 input
+  - `HashAlgorithmEnum.java:32-35` — null/blank 默认 SHA256，不支持的算法抛 `IllegalArgumentException`
+  - `GlobalExceptionHandler.java:71-75` — `IllegalArgumentException` → TOOL_002
+  - `GlobalExceptionHandler.java:55-63` — `MethodArgumentNotValidException` → TOOL_001（input 字段）
+  - `HashServiceImpl.java:24-27` — 服务层双重校验 input 非空
+- 测试证据：`HashServiceImplTest.java:28-92` — 覆盖 SHA256/MD5/SHA1、空输入、null 输入
+- 结论：**满足设计**
 
-**路径 2 — 非法算法名**：
-```
-请求 algorithm="INVALID" → HashAlgorithmEnum.fromName("INVALID") →
-IllegalArgumentException → GlobalExceptionHandler.handleException() → TOOL_999
-```
-- 应返回 TOOL_002，实际返回 TOOL_999
-
-**Spec 证据**：
-- design.md:290-293: "TOOL_001 输入不能为空", "TOOL_002 不支持的哈希算法"
-- design.md:340-343: "TOOL_003 数组不能为空", "TOOL_004 数组元素过多（超过 1000）"
-
-**代码证据**：
-- `GlobalExceptionHandler.java:37-41`: `handleException()` 硬编码返回 `"TOOL_999"`
-- 无 `MethodArgumentNotValidException` 的 `@ExceptionHandler`
-- 无 `IllegalArgumentException` 的 `@ExceptionHandler`
+#### F03 — 冒泡排序接口 ❌ P0
+- 设计文档 §5.1.3.3：R03 → TOOL_003（数组不能为空），R04 → TOOL_004（数组元素过多）
+- 代码证据：
+  - `SortRequest.java:13-14` — `@NotEmpty` + `@Size(max=1000)` 校验
+  - `GlobalExceptionHandler.java:31-34` — `VALIDATION_ERROR_CODE_MAP` 仅映射 `"array" → "TOOL_003"`
+  - **问题**：`@NotEmpty` 和 `@Size` 均以字段名 `"array"` 报错，当前映射无法区分二者，导致 `@Size(max=1000)` 校验失败时返回 **TOOL_003** 而非设计要求的 **TOOL_004**
+- **Spec 证据**：design.md L343-344 — 错误码 TOOL_004 说明"数组元素过多（超过 1000）"
+- **代码证据**：`GlobalExceptionHandler.java:31-34` — `Map.of("input", "TOOL_001", "array", "TOOL_003")`，缺少 `@Size` 超限场景到 TOOL_004 的映射
+- 结论：**P0 阻塞** — 超长数组校验返回错误码 TOOL_003 而非 TOOL_004，与设计文档不符
 
 ---
 
-## §4 可读性检查（Step 3）
+## §3 可读性检查（Step 3）
 
-| ID | 规则 | 状态 | 说明 |
-|----|------|------|------|
-| A1.1 | 文件名 = 顶层类名 | ✅ | 全部满足 |
-| A1.2 | 编码 UTF-8 | ✅ | pom.xml 配置 UTF-8 |
-| A2.1 | 文件结构顺序 | ✅ | package → import → 类，结构正确 |
-| A2.2 | 禁止 `import *` | ✅ | 无通配符导入 |
-| A2.3 | import 分组 | ✅ | 静态/非静态分组正确 |
-| A2.4 | import 字典序 | ✅ | 排序正确 |
-| A3.1 | K&R 大括号 | ✅ | 全部满足 |
-| A3.3 | 缩进 4 空格 | ✅ | 全部满足 |
-| A3.4 | 行宽 ≤ 120 | ✅ | 全部满足 |
-| A3.7 | 关键字与 `(` 空格 | ✅ | `if (`, `for (`, `catch (` 均有空格 |
-| A3.8 | 运算符空格 | ✅ | 正确 |
-| A4.1 | 包名全小写 | ✅ | `com.example.tool.*` |
-| A4.2 | 类名 UpperCamelCase | ✅ | 全部满足 |
-| A4.3 | 方法名 lowerCamelCase | ✅ | 全部满足 |
-| A4.4 | 常量 UPPER_SNAKE_CASE | ✅ | `MAX_ARRAY_LENGTH` |
-| A5.1 | 重写方法 `@Override` | ✅ | `HashServiceImpl.computeHash`, `SortServiceImpl.bubbleSort` |
-| A5.2 | catch 块非空 | ✅ | catch 有日志和异常抛出 |
-| A6.1 | 数组方括号属类型 | ✅ | `int[] array` |
-| A7.1 | public 类/方法 Javadoc | ✅ | 全部 public 类和方法均有 Javadoc |
-| A7.2 | Javadoc 标记顺序 | ✅ | `@param` → `@return` |
-
-**可读性结论**：✅ 全部通过，代码风格符合阿里巴巴 Java 规范。
+| ID | 规则 | 文件:行号 | 结果 |
+|----|------|-----------|------|
+| A1.1 | 文件名 = 顶层类名 | 全部 | ✅ |
+| A1.2 | 编码 UTF-8 | 全部 | ✅ |
+| A2.2 | 禁止 `import *` | 全部 | ✅ |
+| A2.2 | 未使用的 import | `GlobalExceptionHandler.java:12` — `import java.util.stream.Collectors` 未使用 | ⚠️ P2 |
+| A3.1 | K&R 大括号 | 全部 | ✅ |
+| A3.3 | 缩进 4 空格 | 全部 | ✅ |
+| A3.4 | 行宽 ≤ 120 | 全部 | ✅ |
+| A4.1 | 包名全小写 | 全部 | ✅ |
+| A4.2 | 类名 UpperCamelCase | 全部 | ✅ |
+| A4.3 | 方法名 lowerCamelCase | 全部 | ✅ |
+| A4.4 | 常量 UPPER_SNAKE | `GlobalExceptionHandler.java:31` VALIDATION_ERROR_CODE_MAP, `SortServiceImpl.java:19` MAX_ARRAY_LENGTH | ✅ |
+| A5.1 | `@Override` 注解 | `HashServiceImpl.java:23`, `SortServiceImpl.java:21` | ✅ |
+| A5.2 | catch 非空 | `HashServiceImpl.java:46-49` — catch 有 log + rethrow | ✅ |
+| A6.1 | 数组方括号类型侧 | `SortService.java:18` — `int[] array` | ✅ |
+| A7.1 | public 类/方法 Javadoc | 全部 public 类和方法均有 Javadoc | ✅ |
+| — | 使用完全限定名代替 import | `HashServiceImpl.java:31` — `java.nio.charset.StandardCharsets.UTF_8` 应 import | ⚠️ P2 |
 
 ---
 
-## §5 可靠性检查（Step 4）
+## §4 可靠性检查（Step 4）
 
-### G — 蚂蚁编码军规
+### 脚本预扫结果
 
-| ID | 检查项 | 状态 | 说明 |
-|----|--------|------|------|
-| G1.x | 并发控制 | N/A | 无状态计算，无共享状态 |
-| G2.x | 幂等拦截 | N/A | 均为读/计算接口，不涉及写操作 |
-| G3.x | 事务控制 | N/A | 无数据库操作 |
-| G4.x | SQL与索引 | N/A | 无数据库操作 |
-| G5.x | 消息(MQ) | N/A | 无消息队列 |
-| G6.x | 缓存 | N/A | 无缓存 |
-| G7.x | 调度任务 | N/A | 无定时任务 |
-| G8.x | 防御编程 | ✅ | 无资源泄漏风险；`SortServiceImpl` 对输入数组做 clone 保护原始数据 |
-| G9.x | 网络调用 | N/A | 无外部 RPC/HTTP 调用 |
-| G10.x | 接口契约 | ⚠️ P1 | `SortService` 接口返回 `SortServiceImpl.SortResult`（接口依赖实现类） |
-| G11.3 | 入参空值校验 | ✅ | `HashServiceImpl` 有 null 检查；`SortServiceImpl` 有 null/空检查 |
-| G11.4 | 数值运算 | ✅ | 无浮点运算，冒泡排序仅整数比较 |
-| G12.x | 资损防控 | N/A | 不涉及资金 |
-| G13.1 | 日志级别 | ✅ | `logger.info` 正常流程；`logger.warn` 业务异常；`logger.error` 系统异常 |
-| G14.x | 国际化/多租户 | N/A | 演示工具 |
-| G15.x | 可灰度 | N/A | 演示工具 |
-| G16.2 | 异常路径日志 | ✅ | 脚本扫描误报 — `HashServiceImpl:49` catch 块内 `logger.error()` 有日志输出 |
-| G16.3 | 日志级别正确 | ✅ | 级别使用正确 |
-| G16.4 | 空 catch | ✅ | 无空 catch |
-| G17.x | 可应急 | N/A | 演示工具 |
+| 规则 | 文件:行号 | 结果 |
+|------|-----------|------|
+| G16.2 CatchWithoutLogging | `HashServiceImpl.java:46` | ⚠️ **误报（False Positive）** — catch 块内 `logger.error("不支持的哈希算法: {}", algorithm.getAlgorithm(), e)` 已记录日志并 rethrow BusinessException，符合 G16.2 要求 |
 
-### S — 安全
+### LLM 核销
 
-| ID | 检查项 | 状态 | 说明 |
-|----|--------|------|------|
-| S1.x | SQL注入 | N/A | 无数据库 |
-| S2.x | XSS | N/A | 后端不渲染 HTML |
-| S3.x | SSRF | N/A | 无外部请求 |
-| S4.x | 命令执行 | N/A | 无命令执行 |
-| S5.x | XXE | N/A | 无 XML 解析 |
-| S6.x | 反序列化 | N/A | 仅 Jackson 标准 JSON 反序列化到 DTO |
-| S7.x | 文件上传 | N/A | 无文件操作 |
-| S8.x | 访问控制 | N/A | 设计文档明确排除认证 |
-| S9.x | 数据安全 | N/A | 无敏感数据 |
-| **S10.2** | **CORS Origin 白名单** | **⚠️ P1** | `CorsConfig.java:22` — `setAllowedOriginPatterns(List.of("*"))` + `setAllowCredentials(true)` 组合宽松，开发阶段可接受但需注意生产风险 |
+| ID | 扫描信号 | 适用性 | 结果 |
+|----|----------|--------|------|
+| G1 (并发) | 无共享状态，纯计算 | N/A | — |
+| G2 (幂等) | 读接口，无写操作 | N/A | — |
+| G3 (事务) | 无数据库操作 | N/A | — |
+| G4 (SQL) | 无 SQL | N/A | — |
+| G5 (MQ) | 无消息队列 | N/A | — |
+| G6 (缓存) | 无缓存 | N/A | — |
+| G7 (调度) | 无定时任务 | N/A | — |
+| G8.1 (防御编程) | `HashServiceImpl.java:46-49` catch 后 log + rethrow | ✅ | 正确 |
+| G8.3 (资源释放) | 无外部资源 | N/A | — |
+| G9 (网络调用) | 无外部调用 | N/A | — |
+| G10 (接口契约) | `SortService` 返回类型从内部类改为 VO | ✅ | 向后兼容改进 |
+| G11.1 (单测断言) | 所有测试含断言 | ✅ | — |
+| G11.2 (边界覆盖) | 空值、单元素、超长、负数、重复 | ✅ | 覆盖充分 |
+| G11.3 (入参校验) | `HashServiceImpl.java:25`, `SortServiceImpl.java:23-28` | ✅ | 双保险校验 |
+| G13.1 (日志级别) | INFO/WARN/ERROR 使用正确 | ✅ | — |
+| G16.2 (异常日志) | `HashServiceImpl.java:46-49` catch 已 log | ✅ | 见上方误报说明 |
+| G16.3 (日志级别) | 业务异常 WARN，系统异常 ERROR | ✅ | — |
 
-### 自动化预扫脚本结果
+### Bug Pattern 核销（关键项）
 
-| 结果 | 说明 |
-|------|------|
-| [P0] G16.2 CatchWithoutLogging — `HashServiceImpl.java:49` | **误报** — catch 块内 `logger.error()` 有日志输出（line 50），脚本未识别到 |
+| ID | 规则 | 检查结果 |
+|----|------|----------|
+| B007 | 禁止捕获 Throwable 吞断言 | ✅ 未发现 |
+| B008 | 禁止 Executors 创建线程池 | ✅ 未使用 |
+| B053 | 期望异常测试需 fail() | ✅ 使用 assertThatThrownBy |
+| B076 | @Transactional 仅 public | N/A |
+| B080 | 单测须含断言 | ✅ |
+| M004 | 禁止 printStackTrace | ✅ 使用 logger |
+| M007 | catch 非空 | ✅ |
+| M020 | @Override 注解 | ✅ |
 
 ---
 
-## §6 自定义扩展检查（Step 5）
+## §5 安全与自定义检查（Step 5）
 
-**N/A**（未启用自定义规则）
+### 安全检查
+
+| ID | 检查项 | 结果 |
+|----|--------|------|
+| S1 (SQL注入) | 无 SQL | N/A |
+| S2 (XSS) | 后端不渲染 HTML | N/A |
+| S3 (SSRF) | 无外部请求 | N/A |
+| S8 (访问控制) | 无认证需求（设计排除） | N/A |
+| S9.1 (密钥硬编码) | 无密钥 | N/A |
+| S10.2 (CORS 白名单) | `CorsConfig.java:22` — 从 `*` 改为具体域名 `localhost:3000` / `127.0.0.1:3000` | ✅ 安全加固 |
+
+### 自定义扩展检查
+
+| ID | 检查项 | 结果 |
+|----|--------|------|
+| U1.1 | Controller 入参使用 `@Valid` | `ToolController.java:59,74` — ✅ |
 
 ---
 
-## §7 跨仓对齐点检查
+## §6 变更亮点
 
-| 对齐项 | 后端 (testDJnew) | 前端 (ykstest) | 状态 |
-|--------|-------------------|----------------|------|
-| HelloWorld 接口路径 | `GET /api/tool/helloworld` | `api.ts` 调用 `/api/tool/helloworld` | ✅ 一致 |
-| 哈希接口路径 | `POST /api/tool/hash` | `api.ts` 调用 `/api/tool/hash` | ✅ 一致 |
-| 排序接口路径 | `POST /api/tool/sort` | `api.ts` 调用 `/api/tool/sort` | ✅ 一致 |
-| 统一响应格式 | `{code, msg, data}` | 前端解析 `response.data` | ✅ 一致 |
-| 哈希算法默认值 | SHA-256 | 前端默认 SHA-256 | ✅ 一致 |
-| 排序输入格式 | `int[]` (JSON array) | 前端发送 `number[]` | ✅ 一致 |
-| CORS 跨域 | 配置 `CorsFilter` 允许所有源 | 开发服务器 `:3000` | ✅ 满足 |
+1. **CORS 安全加固**：从通配符 `*` 收紧为 `localhost:3000` / `127.0.0.1:3000` 白名单，符合 S10.2 安全最佳实践。
+2. **接口解耦**：`SortService` 返回类型从 `SortServiceImpl.SortResult`（内部类）提升为独立 `SortResultVO`，消除了 Controller 对 Service 实现类的隐式依赖。
+3. **防御性编程**：`HashAlgorithmEnum.fromName()` 对 null/blank 输入默认返回 SHA256，避免 NPE 并提升 API 易用性。
+4. **测试覆盖充分**：空输入、null 输入、超长数组、负数、重复元素等边界场景均有测试覆盖。
 
-**跨仓对齐结论**：✅ 前后端接口契约一致，无跨仓兼容性问题。
+---
+
+## §7 问题汇总
+
+| # | 等级 | 文件:行号 | 描述 |
+|---|------|-----------|------|
+| 1 | **P0** | `GlobalExceptionHandler.java:31-34` | `VALIDATION_ERROR_CODE_MAP` 仅映射 `"array" → "TOOL_003"`，`@Size(max=1000)` 校验失败时也返回 TOOL_003，设计文档要求 TOOL_004（数组元素过多）。需区分 `@NotEmpty` 和 `@Size` 两种校验失败场景。 |
+| 2 | P2 | `GlobalExceptionHandler.java:12` | 未使用的 import `java.util.stream.Collectors` |
+| 3 | P2 | `HashServiceImpl.java:31` | 使用完全限定名 `java.nio.charset.StandardCharsets.UTF_8`，建议 import 后直接使用 `StandardCharsets.UTF_8` |
 
 ---
 
 ## §8 修复任务列表
 
-### P0 — 阻塞（必须修复）
-
-- [ ] **P0-1** 修复错误码映射链路：
-  - `GlobalExceptionHandler` 新增 `@ExceptionHandler(MethodArgumentNotValidException.class)`，从校验失败字段提取对应错误码（input 空 → TOOL_001，array 空 → TOOL_003，array 超长 → TOOL_004）
-  - `GlobalExceptionHandler` 新增 `@ExceptionHandler(IllegalArgumentException.class)`，返回 TOOL_002
-  - 或：在 `ToolController.hash()` 中 try-catch `fromName()` 的 `IllegalArgumentException`，转为 `BusinessException("TOOL_002", ...)`
-
-- [ ] **P0-2** 修复分层架构违规：
-  - `SortService.java:18` 返回类型从 `SortServiceImpl.SortResult` 改为独立的结果类（如 `model/vo/SortResultVO` 或新建 `model/dto/SortResult`）
-  - `ToolController.java:11` 移除 `import com.example.tool.service.impl.SortServiceImpl`
-  - `ToolController.java:77` 不再直接引用 `SortServiceImpl.SortResult`
-
-### P1 — 推荐（合并前应修复）
-
-- [ ] **P1-1** `CorsConfig.java:22` — `setAllowedOriginPatterns(List.of("*"))` 与 `setAllowCredentials(true)` 组合过于宽松，建议限定为开发域名列表（如 `http://localhost:3000`）
-
-- [ ] **P1-2** `HashServiceImpl.java:28-30` — null 算法抛出 `TOOL_002` 与 spec 不符（算法可选，默认 SHA-256），建议改为直接使用 `SHA256` 默认值或移除该检查（因为 `fromName` 已处理默认值）
-
-- [ ] **P1-3** 建议 `HashServiceImpl.computeHash` 的 null 输入校验改为同时检查空字符串（`input == null || input.isEmpty()`），与 `HashRequest.@NotBlank` 保持一致
-
-### P2 — 参考（可选改进）
-
-- [ ] **P2-1** `HashAlgorithmEnum.fromName()` 对 null/blank 返回 `SHA256` 的默认行为，建议在 Javadoc 中明确标注
+- [ ] **P0** — `GlobalExceptionHandler.java:31-34`：增加 `@Size` 超限场景到 TOOL_004 的映射。建议方案：在 `MethodArgumentNotValidException` 处理中，检查校验注解类型（`@NotEmpty` vs `@Size`）或校验消息内容来区分，将 `@Size` 失败映射为 TOOL_004。
+- [ ] **P2** — `GlobalExceptionHandler.java:12`：删除未使用的 `import java.util.stream.Collectors`
+- [ ] **P2** — `HashServiceImpl.java:31`：将 `java.nio.charset.StandardCharsets.UTF_8` 替换为 import + `StandardCharsets.UTF_8`
 
 ---
 
-## §9 自动化预扫详细日志
+## §9 脚本预扫误报说明
 
-```
-=== Step 4 Rule Scan (B/M/I + A/S/G) ===
-Targets: .../src/main/java/com/example/tool/
-Engine:  ripgrep
-
-[P0] G16.2 — CatchWithoutLogging: .../HashServiceImpl.java:49
-  → 复核：误报。catch 块内 line 50 有 logger.error(...)，已正常记录日志。
-
-=== Summary: 1 findings (P0=1, P1=0, P2=0) | 52/222 rules scanned ===
-```
+| 规则 | 文件:行号 | 说明 |
+|------|-----------|------|
+| G16.2 | `HashServiceImpl.java:46` | 脚本标记为 "CatchWithoutLogging"，实际 catch 块内 `logger.error("不支持的哈希算法: {}", algorithm.getAlgorithm(), e)` 已记录异常日志并 rethrow 为 BusinessException。人工复核确认为**误报**。 |
 
 ---
 
-> **审查结论**：代码功能实现基本正确，冒泡排序算法、哈希计算逻辑、HelloWorld 接口均符合设计文档。前端接口契约对齐无误。**但存在 2 个 P0 阻塞项**：错误码映射断裂导致所有校验失败统一返回 TOOL_999，以及 SortService 接口依赖实现类的分层违规。修复后方可合并。
+*审查完成时间：2026-08-25 · 审查工具：dtazziboot-java-code-review v1.1.0*

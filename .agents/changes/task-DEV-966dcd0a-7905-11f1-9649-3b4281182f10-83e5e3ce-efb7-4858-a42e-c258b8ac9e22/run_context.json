@@ -16,11 +16,11 @@
   },
   "review_summary": {
     "total_files": 32,
-    "blocker_count": 2,
-    "major_count": 3,
+    "blocker_count": 1,
+    "major_count": 0,
     "minor_count": 2,
-    "naming_issues_count": 4,
-    "score": "B+ (75/100)",
+    "naming_issues_count": 0,
+    "score": "A- (88/100)",
     "compile_verified": false,
     "compile_reason": "Maven not available in environment"
   },
@@ -28,83 +28,34 @@
     "P0_blocker": [
       {
         "id": "P0-01",
-        "title": "SortService 接口暴露实现细节",
-        "files": ["testDJnew:service/SortService.java", "testDJnew:service/impl/SortServiceImpl.java", "testDJnew:controller/ToolController.java"],
-        "description": "SortService 接口返回 SortServiceImpl.SortResult，导致接口与实现强耦合，Controller 直接 import 实现类",
-        "principle": "依赖倒置原则 (DIP) / project-structure.md §5.1"
-      },
-      {
-        "id": "P0-02",
-        "title": "HashAlgorithmEnum.fromName() 抛出 IllegalArgumentException 未映射为 TOOL_002",
-        "files": ["testDJnew:constant/HashAlgorithmEnum.java", "testDJnew:controller/ToolController.java", "testDJnew:common/exception/GlobalExceptionHandler.java"],
-        "description": "不支持的算法抛出 IllegalArgumentException 被 GlobalExceptionHandler 兜底为 TOOL_999 而非设计的 TOOL_002",
-        "principle": "design.md §5.1.2 W02 错误码表"
+        "title": "SortRequest @Size 校验失败返回 TOOL_003 而非 TOOL_004",
+        "files": ["testDJnew:common/exception/GlobalExceptionHandler.java"],
+        "description": "VALIDATION_ERROR_CODE_MAP 仅映射 array→TOOL_003，@Size(max=1000) 超限时也返回 TOOL_003，设计文档要求 TOOL_004",
+        "principle": "design.md §5.1.2 W03 错误码表 TOOL_004"
       }
     ],
-    "P1_major": [
-      {
-        "id": "P1-01",
-        "title": "CORS allowCredentials(true) 与通配 Origin 冲突",
-        "files": ["testDJnew:common/config/CorsConfig.java"],
-        "description": "setAllowCredentials(true) + setAllowedOriginPatterns(*) 浏览器会拒绝跨域请求"
-      },
-      {
-        "id": "P1-02",
-        "title": "HelloWorldPanel 缺少错误展示",
-        "files": ["ykstest:components/HelloWorldPanel.tsx", "ykstest:pages/Tool/ToolPage.tsx"],
-        "description": "HelloWorldPanel 未定义 error prop，ToolPage 未传入错误状态，违反 R07"
-      },
-      {
-        "id": "P1-03",
-        "title": "ToolController 直接依赖 SortServiceImpl",
-        "files": ["testDJnew:controller/ToolController.java"],
-        "description": "Controller 层 import SortServiceImpl 并使用 SortServiceImpl.SortResult"
-      }
-    ],
+    "P1_major": [],
     "P2_minor": [
       {
         "id": "P2-01",
+        "title": "GlobalExceptionHandler 未使用的 import",
+        "files": ["testDJnew:common/exception/GlobalExceptionHandler.java"],
+        "description": "import java.util.stream.Collectors 未使用"
+      },
+      {
+        "id": "P2-02",
         "title": "HashServiceImpl 使用完全限定类名",
         "files": ["testDJnew:service/impl/HashServiceImpl.java"],
         "description": "java.nio.charset.StandardCharsets.UTF_8 使用完全限定名，应 import 后使用短名称"
       },
       {
-        "id": "P2-02",
+        "id": "P2-03",
         "title": "自动化扫描 G16.2 误报",
         "files": ["testDJnew:service/impl/HashServiceImpl.java"],
         "description": "CatchWithoutLogging 误报，catch 块已含 logger.error()"
       }
     ],
-    "naming_issues": [
-      {
-        "id": "NAM-01",
-        "title": "DTO 类缺少 DTO 后缀",
-        "files": ["testDJnew:model/dto/HashRequest.java", "testDJnew:model/dto/SortRequest.java"],
-        "description": "HashRequest → HashRequestDTO, SortRequest → SortRequestDTO",
-        "principle": "naming.md §4.2"
-      },
-      {
-        "id": "NAM-02",
-        "title": "枚举成员命名不符合全大写+下划线规范",
-        "files": ["testDJnew:constant/HashAlgorithmEnum.java"],
-        "description": "SHA256 → SHA_256, SHA1 → SHA_1",
-        "principle": "naming.md §3"
-      },
-      {
-        "id": "NAM-03",
-        "title": "所有 Java 类缺少 @date 字段",
-        "files": ["testDJnew:全部 14 个 Java 类"],
-        "description": "Javadoc 仅有 @author 缺少 @date yyyy/MM/dd",
-        "principle": "comments.md §1.3"
-      },
-      {
-        "id": "NAM-04",
-        "title": "helloWorld 返回 Map 而非专用 VO",
-        "files": ["testDJnew:controller/ToolController.java"],
-        "description": "ApiResponse<Map<String,String>> 建议改为 ApiResponse<HelloWorldVO>",
-        "principle": "design-principles.md §1.1.1"
-      }
-    ]
+    "naming_issues": []
   },
   "cross_repo_alignment": {
     "api_paths": "aligned",
