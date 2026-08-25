@@ -25,8 +25,9 @@ export default function HashTab({
     <div>
       <input value={content} onChange={e => onContentChange(e.target.value)} placeholder="待哈希内容" />
       <select value={algorithm} onChange={e => onAlgorithmChange(e.target.value)}>
-        <option value="MD5">MD5</option>
         <option value="SHA-256">SHA-256</option>
+        <option value="SHA-384">SHA-384</option>
+        <option value="SHA-512">SHA-512</option>
       </select>
       <button onClick={handleClick}>计算哈希</button>
       <pre>{result}</pre>
