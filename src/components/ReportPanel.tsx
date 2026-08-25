@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as echarts from 'echarts';
-import { useMetrics, type Dimension } from '../hooks/useMetrics';
+import { useMetrics } from '../hooks/useMetrics';
+import type { ChartType, Dimension } from '../types';
 
 const dimensionLabels: Record<Dimension, string> = {
   userType: '人员类型',
@@ -44,7 +45,7 @@ export default function ReportPanel() {
           <option value="userDept">人员部门</option>
         </select>
         <label style={{ marginLeft: 16 }}>图表：</label>
-        <select value={chartType} onChange={e => setChartType(e.target.value as any)}>
+        <select value={chartType} onChange={e => setChartType(e.target.value as ChartType)}>
           <option value="line">折线图</option>
           <option value="bar">柱状图</option>
           <option value="pie">饼图</option>

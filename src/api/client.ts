@@ -20,8 +20,18 @@ export const hash = (content: string, algorithm: string = 'SHA-256') =>
 export const bubbleSort = (numbers: number[], ascending = true, unique = false) =>
   api.post<ApiResponse<SortResponse>>('/sort/bubble', { numbers, ascending, unique }).then(r => r.data.data);
 
-export const exportData = (tab: string, format: string) =>
-  api.post('/export', { tab, format }, { responseType: 'blob' }).then(r => r.data);
+export interface ExportPayload {
+  tab: string;
+  format: string;
+  content?: string;
+  algorithm?: string;
+  numbers?: number[];
+  ascending?: boolean;
+  unique?: boolean;
+}
+
+export const exportData = (payload: ExportPayload) =>
+  api.post('/export', payload, { responseType: 'blob' }).then(r => r.data);
 
 export const fetchReport = (dimension: string, startDate: string, endDate: string) =>
   api.get<ApiResponse<Array<{ dimension: string; count: number }>>>('/metrics/report', {

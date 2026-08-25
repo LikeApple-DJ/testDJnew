@@ -3,7 +3,7 @@ import HelloTab from './HelloTab';
 import HashTab from './HashTab';
 import BubbleTab from './BubbleTab';
 import ReportPanel from './ReportPanel';
-import * as client from '../api/client';
+import { exportData, type ExportPayload } from '../api/client';
 import type { TabKey } from '../types';
 
 const tabs: { key: TabKey; label: string }[] = [
@@ -14,9 +14,24 @@ const tabs: { key: TabKey; label: string }[] = [
 
 export default function DemoPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('hello');
+  const [hashContent, setHashContent] = useState('hello');
+  const [hashAlgorithm, setHashAlgorithm] = useState('SHA-256');
+  const [bubbleInput, setBubbleInput] = useState('3,1,4,1,5,9');
+
+  const buildExportPayload = (format: string): ExportPayload => {
+    const base = { tab: activeTab, format };
+    switch (activeTab) {
+      case 'hash':
+        return { ...base, content: hashContent, algorithm: hashAlgorithm };
+      case 'bubble':
+        return { ...base, numbers: bubbleInput.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)) };
+      default:
+        return base;
+    }
+  };
 
   const handleExport = async (format: string) => {
-    const blob = await client.exportData(activeTab, format);
+    const blob = await exportData(buildExportPayload(format));
     const url = window.URL.createObjectURL(new Blob([blob]));
     const link = document.createElement('a');
     link.href = url;
@@ -41,8 +56,17 @@ export default function DemoPage() {
       </div>
       <div style={{ marginTop: 16 }}>
         {activeTab === 'hello' && <HelloTab />}
-        {activeTab === 'hash' && <HashTab />}
-        {activeTab === 'bubble' && <BubbleTab />}
+        {activeTab === 'hash' && (
+          <HashTab
+            content={hashContent}
+            algorithm={hashAlgorithm}
+            onContentChange={setHashContent}
+            onAlgorithmChange={setHashAlgorithm}
+          />
+        )}
+        {activeTab === 'bubble' && (
+          <BubbleTab input={bubbleInput} onInputChange={setBubbleInput} />
+        )}
       </div>
       <ReportPanel />
     </div>

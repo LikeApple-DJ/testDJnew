@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import * as client from '../api/client';
 
-export default function BubbleTab() {
-  const [input, setInput] = useState('3,1,4,1,5,9');
+export interface BubbleTabProps {
+  input: string;
+  onInputChange: (value: string) => void;
+}
+
+export default function BubbleTab({ input, onInputChange }: BubbleTabProps) {
   const [result, setResult] = useState<string>('');
 
   const handleClick = async () => {
@@ -13,7 +17,7 @@ export default function BubbleTab() {
 
   return (
     <div>
-      <input value={input} onChange={e => setInput(e.target.value)} placeholder="逗号分隔数字" />
+      <input value={input} onChange={e => onInputChange(e.target.value)} placeholder="逗号分隔数字" />
       <button onClick={handleClick}>冒泡排序</button>
       <pre>{result}</pre>
     </div>

@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import * as client from '../api/client';
 
-export default function HashTab() {
-  const [content, setContent] = useState('hello');
-  const [algorithm, setAlgorithm] = useState('SHA-256');
+export interface HashTabProps {
+  content: string;
+  algorithm: string;
+  onContentChange: (value: string) => void;
+  onAlgorithmChange: (value: string) => void;
+}
+
+export default function HashTab({
+  content,
+  algorithm,
+  onContentChange,
+  onAlgorithmChange,
+}: HashTabProps) {
   const [result, setResult] = useState<string>('');
 
   const handleClick = async () => {
@@ -13,8 +23,8 @@ export default function HashTab() {
 
   return (
     <div>
-      <input value={content} onChange={e => setContent(e.target.value)} placeholder="待哈希内容" />
-      <select value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
+      <input value={content} onChange={e => onContentChange(e.target.value)} placeholder="待哈希内容" />
+      <select value={algorithm} onChange={e => onAlgorithmChange(e.target.value)}>
         <option value="MD5">MD5</option>
         <option value="SHA-256">SHA-256</option>
       </select>
