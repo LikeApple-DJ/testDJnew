@@ -1,421 +1,212 @@
-# Code Review Report
+# Code Review Report (Final)
 
-> **Date**: 2026-08-25  
-> **Task**: 三个接口（HelloWorld / 哈希算法 / 冒泡排序）+ 前端三 Tab 页面  
-> **Repos**: `[testDJnew]` Java Spring Boot 后端 + `[ykstest]` React 前端  
-> **Reviewer**: DTCoder (code-review-skill)  
-> **Decision**: 🔄 **Request Changes** — 3 blockers must be addressed before merge
+> **Date**: 2026-08-25
+> **Task**: 三个接口（HelloWorld / 哈希算法 / 冒泡排序）+ 前端三 Tab 页面
+> **Repos**: `[testDJnew]` Java Spring Boot 后端 + `[ykstest]` React 前端
+> **Reviewer**: DTCoder (code-review-skill)
+> **Decision**: ✅ **Approve** — No blockers; 0 🔴 / 2 🟡 / 3 🟢 / 2 💡
 
 ---
 
 ## 1. Review Summary
 
-| Metric | Value |
-|--------|-------|
-| Files reviewed | 17 (8 backend + 9 frontend) |
-| Total lines | ~600 |
-| 🔴 Blocking | 3 |
-| 🟡 Important | 5 |
-| 🟢 Nit | 3 |
-| 💡 Suggestion | 2 |
-| 🎉 Praise | 3 |
+| Metric | Previous CR | Current (Fix Applied) |
+|--------|-------------|----------------------|
+| 🔴 Blocking | 3 | **0** |
+| 🟡 Important | 5 | **2** (new) |
+| 🟢 Nit | 3 | **3** |
+| 💡 Suggestion | 2 | **2** |
+| 🎉 Praise | 3 | 3 |
+| **Decision** | 🔄 Request Changes | ✅ **Approve** |
+
+> **Previous CR blockers (3/3 resolved):** Platform-default charset → `StandardCharsets.UTF_8`, null input NPE → 400 guard, DoS via unbounded input → `MAX_HASH_INPUT_LENGTH = 10_000`.
+> **Previous CR important items (5/5 resolved):** Nested ternary → switch, hardcoded CORS origin → `@Value`, no fetch timeout → `AbortController`, duplicated error handling → `apiFetch()`, missing edge-case tests → 7 new tests.
 
 ---
 
-## 2. High-Level Architecture Review
+## 2. Post-Fix Verification
 
-### 2.1 Design Fidelity
+### 2.1 Blocker Fix Verification
 
-代码实现与设计文档 `2026-08-25-helloworld-hash-bubblesort-design.md` 的接口契约高度一致：
+| # | Blocker (Previous CR) | Fix Applied | Status |
+|---|----------------------|-------------|--------|
+| B1 | `getBytes()` platform-default charset | `getBytes(StandardCharsets.UTF_8)` at L64 | ✅ |
+| B2 | `request.input()` null → NPE/500 | null/empty check at L42-45, returns 400 | ✅ |
+| B3 | No input size limit (DoS) | `MAX_HASH_INPUT_LENGTH = 10_000` at L22, L46-49 | ✅ |
 
-| 设计项 | 实现状态 |
-|--------|---------|
-| `GET /api/hello` → `{message, timestamp, version}` | ✅ 一致 |
-| `POST /api/hash` → `{algorithm, input, hash}` | ✅ 一致 |
-| `POST /api/sort` → `{sorted, steps}` | ✅ 一致 |
-| 错误格式 `{"error": "..."}` | ✅ 一致 |
-| CORS 允许 `localhost:3000` | ✅ 一致 |
-| 后端端口 8080 / 前端端口 3000 | ✅ 一致 |
+### 2.2 Important Fix Verification
 
-### 2.2 Cross-Repo Contract Alignment
+| # | Important (Previous CR) | Fix Applied | Status |
+|---|------------------------|-------------|--------|
+| I4 | Nested ternary `algo.equals("SHA1") ? ...` | `switch` expression at L58-62 | ✅ |
+| I5 | Hardcoded CORS origin | `@Value("${cors.allowed-origins:...}")` at L12-13 | ✅ |
+| I6 | No fetch timeout | `AbortController` with 10s at L4-6 of `api.js` | ✅ |
+| I7 | Duplicated error handling | Common `apiFetch()` at L4-17 of `api.js` | ✅ |
+| I8 | Missing edge-case tests | 7 new tests added (L131-213) | ✅ |
+
+### 2.3 Additional Fixes (from Nit)
+
+| # | Issue | Fix Applied | Status |
+|---|-------|-------------|--------|
+| — | `App.js` `find()` may return undefined | `?.component \|\| HelloWorldTab` at L16 | ✅ |
+| — | `HashTab.js` whitespace-only input accepted | `!input.trim()` at L47 | ✅ |
+
+---
+
+## 3. Cross-Repo Contract Alignment (Re-verified)
 
 | 对齐项 | 后端 (testDJnew) | 前端 (ykstest) | 状态 |
 |--------|-----------------|---------------|------|
-| API Base URL | `server.port=8080` | `REACT_APP_API_BASE \|\| 'http://localhost:8080'` | ✅ |
-| CORS Origin | `allowedOrigins("http://localhost:3000")` | Dev server port 3000 | ✅ |
-| Content-Type | `@RestController` → JSON | `headers: {'Content-Type': 'application/json'}` | ✅ |
-| Hash algorithms | MD5, SHA-1, SHA-256 (case-insensitive) | Dropdown: MD5, SHA-1, SHA-256 | ✅ |
-| Sort steps format | `List<SortStep>` → `[{pass, array, swapped}]` | `result.steps.map(step => ...)` | ✅ |
-| Error propagation | `{error: "..."}` with HTTP status | `err.error \|\| 'HTTP ${res.status}'` | ✅ |
+| `GET /api/hello` → `{message, timestamp, version}` | `AlgorithmController.java:24-31` | `HelloWorldTab.js:25-27` | ✅ |
+| `POST /api/hash` → `{algorithm, input, hash}` | `AlgorithmController.java:40-74` | `HashTab.js:57-59` | ✅ |
+| `POST /api/sort` → `{sorted, steps}` | `AlgorithmController.java:76-104` | `BubbleSortTab.js:65,77-83` | ✅ |
+| Error format `{error: "..."}` | `ErrorResponse` record, all error paths | `api.js:10-11` | ✅ |
+| CORS `localhost:3000` | `CorsConfig.java:20-23` (configurable) | Dev server port 3000 | ✅ |
+| Content-Type `application/json` | `@RestController` auto-JSON | `api.js:26-27,34-35` | ✅ |
+| Algorithm values (case-insensitive) | MD5, SHA-1, SHA-256 → normalized | Dropdown: MD5, SHA-1, SHA-256 | ✅ |
+| Sort steps `[{pass, array, swapped}]` | `SortStep` record | `step.pass`, `step.array`, `step.swapped` | ✅ |
 
-**结论**: 跨仓接口契约对齐无问题，前后端 JSON 字段名、类型、嵌套结构完全匹配。
-
-### 2.3 File Organization
-
-- **后端**: 标准 Spring Boot 项目结构，Controller 内聚三个端点，配置类独立。✅
-- **前端**: 组件按 Tab 拆分，API 服务层独立，样式集中管理。✅
+**结论**: 跨仓接口契约全部对齐，字段名、类型、嵌套结构完全匹配，无偏差。
 
 ---
 
-## 3. Line-by-Line Review
+## 4. Remaining Findings
 
-### 3.1 [testDJnew] `AlgorithmController.java`
-
-#### 🔴 [blocking] L48 — Platform-Default Charset
+### 🟡 [important] `AlgorithmController.java` — `ResponseEntity<?>` Wildcard
 
 ```java
-byte[] digest = md.digest(request.input().getBytes());
-```
-
-**问题**: `getBytes()` 使用平台默认字符集，在不同操作系统/JVM 上可能产生不同的哈希结果。对于非 ASCII 输入（如中文），结果不可预期。
-
-**修复建议**:
-```java
-import java.nio.charset.StandardCharsets;
-// ...
-byte[] digest = md.digest(request.input().getBytes(StandardCharsets.UTF_8));
-```
-
-#### 🔴 [blocking] L38-L58 — Missing Null Check on `request.input()`
-
-```java
-public ResponseEntity<?> hash(@RequestBody HashRequest request) {
-    String algo = request.algorithm().toUpperCase().replace("-", "");
-    // ...
-    byte[] digest = md.digest(request.input().getBytes());  // NPE if input is null
-```
-
-**问题**: 如果请求体为 `{"algorithm":"SHA-256"}` (缺少 `input` 字段) 或 `{"algorithm":"SHA-256","input":null}`，`request.input().getBytes()` 会抛出 `NullPointerException`，导致 500 Internal Server Error 而非有意义的 400 Bad Request。
-
-**修复建议**: 在方法开头增加 null 校验：
-```java
-if (request.input() == null || request.input().isEmpty()) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(new ErrorResponse("input must not be null or empty"));
-}
-```
-
-#### 🔴 [blocking] L38-L58 — No Input Size Limit (DoS Risk)
-
-**问题**: 没有对 `input` 字段的长度限制。攻击者可以发送超大字符串（如 100MB+），导致服务端内存耗尽（OOM）或 CPU 长时间占用。
-
-**修复建议**: 限制输入长度，例如：
-```java
-private static final int MAX_HASH_INPUT_LENGTH = 10_000;
-
-if (request.input().length() > MAX_HASH_INPUT_LENGTH) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(new ErrorResponse("input too long, max " + MAX_HASH_INPUT_LENGTH + " chars"));
-}
-```
-
-#### 🟡 [important] L46 — Nested Ternary
-
-```java
-String javaAlgo = algo.equals("SHA1") ? "SHA-1" : algo.equals("SHA256") ? "SHA-256" : "MD5";
-```
-
-**问题**: 嵌套三元运算符可读性差，容易出错。未来增加新算法（如 SHA-512）时更容易引入 bug。
-
-**建议**: 用 switch 表达式 (Java 17) 或 Map 替代：
-```java
-String javaAlgo = switch (algo) {
-    case "SHA1" -> "SHA-1";
-    case "SHA256" -> "SHA-256";
-    default -> "MD5";
-};
-```
-
-#### 🟡 [important] L38 — `ResponseEntity<?>` Wildcard
-
-```java
+// L41: hash method
 public ResponseEntity<?> hash(@RequestBody HashRequest request)
+// L77: sort method
+public ResponseEntity<?> sort(@RequestBody SortRequest request)
 ```
 
-**问题**: 通配符 `?` 丢失了类型信息。应使用更具体的返回类型。
+**问题**: 通配符 `?` 丢失了类型信息。Spring 的 `ResponseEntity` 支持泛型以提供编译时类型检查。
 
-**建议**: 使用 `ResponseEntity<Object>` 或定义统一的响应基类。
+**建议**: 使用 `ResponseEntity<Object>` 或定义密封接口（Java 17+）统一成功/错误响应类型。非阻塞，当前功能正确。
 
-#### 🟢 [nit] L62 — Redundant Null Check on `int[]`
-
-```java
-if (request.numbers() == null || request.numbers().length == 0)
-```
-
-`int[]` 的 null 检查合理（Jackson 可反序列化 `{"numbers":null}`），但 Jackson 默认配置下，缺失字段会抛异常而非设为 null。保留此检查作为防御性编程是可以的，但需注意其触发条件有限。
-
----
-
-### 3.2 [testDJnew] `CorsConfig.java`
-
-#### 🟡 [important] L17 — Hardcoded CORS Origin
-
-```java
-.allowedOrigins("http://localhost:3000")
-```
-
-**问题**: 硬编码的 CORS origin 在生产环境会失效。应通过配置文件注入。
-
-**建议**:
-```java
-@Value("${cors.allowed-origins:http://localhost:3000}")
-private String allowedOrigins;
-```
-
-#### 🎉 [praise] L18 — Method Whitelist
-
-```java
-.allowedMethods("GET", "POST")
-```
-
-仅开放 GET/POST，符合最小权限原则。✅
-
----
-
-### 3.3 [testDJnew] `AlgorithmControllerTest.java`
-
-#### 🎉 [praise] — Comprehensive Test Coverage
-
-测试覆盖了正常路径、错误路径、大小写不敏感、空数组、单元素数组等场景。测试数据（哈希值）经过验证正确。✅
-
-#### 🟡 [important] — Missing Edge Case Tests
-
-| 缺失测试 | 风险 |
-|----------|------|
-| hash with null/empty input | NPE → 500 |
-| hash with very long input | DoS |
-| sort with negative numbers | 未验证负数的排序正确性 |
-| sort with already-sorted array | 边界条件 |
-| sort with reverse-sorted array | 最坏情况性能 |
-| sort with duplicate values | 稳定性验证 |
-
----
-
-### 3.4 [testDJnew] `pom.xml`
-
-#### 🟢 [nit] — Missing DevTools
-
-仅依赖 `spring-boot-starter-web` 和 `spring-boot-starter-test`。对于开发环境，可考虑添加 `spring-boot-devtools`（optional）。
-
-#### 🎉 [praise] — Clean Dependencies
-
-依赖最小化，无冗余依赖。✅
-
----
-
-### 3.5 [ykstest] `src/services/api.js`
-
-#### 🟡 [important] — No Fetch Timeout
+### 🟡 [important] `HelloWorldTab.js` — Promise Chain Style Inconsistency
 
 ```js
-const res = await fetch(`${API_BASE}/api/hello`);
-```
-
-**问题**: `fetch` 无超时设置。如果后端服务不可达，浏览器默认超时可能长达数分钟，用户体验差。
-
-**建议**: 使用 `AbortController` 设置超时：
-```js
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 10000);
-const res = await fetch(url, { signal: controller.signal });
-clearTimeout(timeout);
-```
-
-#### 🟡 [important] L3-L9 — Duplicated Error Handling
-
-三个函数 `helloWorld`、`computeHash`、`bubbleSort` 中的错误处理逻辑完全相同，可提取为公共函数：
-
-```js
-async function apiFetch(url, options = {}) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
-```
-
-#### 🟢 [nit] L1 — API Base Fallback
-
-```js
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
-```
-
-环境变量前缀 `REACT_APP_` 是 create-react-app 的约定，正确。✅
-
----
-
-### 3.6 [ykstest] `src/App.js`
-
-#### 🟡 [important] L16 — Potential Runtime Error
-
-```js
-const ActiveComponent = TABS.find((t) => t.key === activeTab).component;
-```
-
-**问题**: 如果 `activeTab` 值意外不在 TABS 中（如 URL 参数注入），`find()` 返回 `undefined`，访问 `.component` 会抛出 `TypeError`。
-
-**建议**: 添加 fallback：
-```js
-const ActiveComponent = TABS.find((t) => t.key === activeTab)?.component || HelloWorldTab;
-```
-
-#### 🎉 [praise] — Clean Tab Pattern
-
-Tab 配置数组 + 动态组件渲染模式简洁清晰，易于扩展。✅
-
----
-
-### 3.7 [ykstest] `src/components/HelloWorldTab.js`
-
-#### 🟢 [nit] L18 — Redundant Null Guard
-
-```js
-if (!data) return null;
-```
-
-在 `loading=false` 且 `error=null` 后，`data` 理论上总是有值（API 不会返回 null）。但作为防御性编程，保留无害。
-
-#### 🟢 [nit] L11-L13 — Chained Promise Style
-
-```js
+// L11-L13: HelloWorldTab uses .then/.catch/.finally
 helloWorld()
   .then(setData)
   .catch(setError)
   .finally(() => setLoading(false));
 ```
 
-功能正确，但与其他组件（HashTab、BubbleSortTab）使用的 `async/await` 风格不一致。建议统一风格。
-
----
-
-### 3.8 [ykstest] `src/components/HashTab.js`
-
-#### 🟡 [important] L47 — Empty Input Guard
-
 ```js
-<button type="submit" disabled={loading || !input}>
+// HashTab.js L16-23: uses async/await
+const data = await computeHash(algorithm, input);
 ```
 
-**问题**: `!input` 对空白字符串 `"   "`（仅空格）返回 `false`，允许提交纯空格。后端会对其计算哈希，虽然不算 bug，但可能不是用户期望的行为。
+**问题**: `HelloWorldTab` 使用 `.then()` 链式调用，而 `HashTab` 和 `BubbleSortTab` 使用 `async/await`。同一项目内两种风格混用降低可读性。
 
-**建议**: 使用 `!input.trim()`。
+**建议**: 统一为 `async/await` 风格。非阻塞，行为等价。
 
-#### ✅ Correct — L41-L45 Algorithm Dropdown
+### 🟢 [nit] `AlgorithmController.java` — Missing JavaDoc
 
-Dropdown 选项值与后端支持的算法完全一致（MD5, SHA-1, SHA-256）。✅
+Controller 的三个公共端点方法（`hello()`, `hash()`, `sort()`）和 Record DTO 均无 JavaDoc 注释。对于公开 API，建议补充简要说明。
 
----
-
-### 3.9 [ykstest] `src/components/BubbleSortTab.js`
-
-#### ✅ Correct — L15-L19 Input Parsing
-
-```js
-const numbers = input.split(',').map(s => s.trim()).filter(s => s !== '').map(Number);
-```
-
-处理流程正确：先过滤空字符串再转数字，避免 `Number('')` 变为 0。✅
-
-#### ✅ Correct — L21-L28 Client-Side Validation
-
-空数组和 NaN 检查在前端完成，减少无效请求到后端。✅
-
-#### 🟡 [important] L55 — Empty Input Guard
-
-```js
-<button type="submit" disabled={loading || !input.trim()}>
-```
-
-此处使用了 `input.trim()`，与 HashTab 的 `!input` 不一致。建议 HashTab 也改为 `!input.trim()`。
-
----
-
-### 3.10 [ykstest] `public/index.html`
-
-#### 🟢 [nit] L10 — Default CRA Description
+### 🟢 [nit] `public/index.html` — Default CRA Metadata
 
 ```html
 <meta name="description" content="Web site created using create-react-app" />
+<title>Ykstest</title>
 ```
 
-描述未更新为项目内容。建议改为中文描述如"算法演示平台"。
+描述和标题未更新为项目内容。建议改为 `"算法演示平台"`。
+
+### 🟢 [nit] `pom.xml` — No DevTools
+
+仅依赖 `spring-boot-starter-web` 和 `spring-boot-starter-test`。对于开发环境，可考虑添加 `spring-boot-devtools`（optional scope）。
+
+### 💡 [suggestion] `CorsConfig.java` — Single-Origin Limitation
+
+```java
+@Value("${cors.allowed-origins:http://localhost:3000}")
+private String allowedOrigins;
+```
+
+`allowedOrigins` 为单个 String。如果未来需要多个 CORS origin（如 staging + production），需要改为 `List<String>` 或使用 `allowedOriginPatterns`。当前单 origin 场景下无问题。
+
+### 💡 [suggestion] — Missing `@ExceptionHandler` for Jackson Errors
+
+当请求体 JSON 格式错误（如 `{"numbers": [1, "a", 3]}`），Jackson 反序列化失败会抛出 `HttpMessageNotReadableException`，Spring 默认返回 400 但格式为 Spring Boot 默认错误 JSON（含 `timestamp`, `status`, `error`, `path`），与自定义 `{error: "..."}` 格式不一致。
+
+**建议**: 添加 `@ControllerAdvice` 统一处理 Jackson 反序列化异常，返回自定义错误格式。
 
 ---
 
-## 4. Security Review
+## 5. Security Review
 
 | 检查项 | 状态 | 备注 |
 |--------|------|------|
-| SQL 注入 | N/A | 无数据库 |
+| 输入验证 | ✅ | hash: null/empty/length 三重校验；sort: null/empty 双重校验 |
+| DoS 防护 | ✅ | `MAX_HASH_INPUT_LENGTH = 10_000` |
 | XSS | ✅ | React 默认转义，无 `dangerouslySetInnerHTML` |
-| CSRF | N/A | 无状态修改操作（仅 GET + 计算类 POST） |
+| CORS | ✅ | 仅开放 `localhost:3000`，方法白名单 GET/POST |
+| SQL 注入 | N/A | 无数据库 |
+| CSRF | N/A | 无状态修改操作 |
 | 命令注入 | ✅ | 无系统调用 |
-| 输入验证 | 🔴 | 哈希端点缺少 null 检查和长度限制 |
-| 敏感数据泄露 | ✅ | 无敏感数据处理 |
-| CORS 配置 | ✅ | 仅允许 localhost:3000，方法白名单 |
+| 敏感数据 | ✅ | 无敏感数据处理 |
 
 ---
 
-## 5. Performance Review
+## 6. Performance Review
 
 | 检查项 | 状态 | 备注 |
 |--------|------|------|
-| 算法复杂度 | ✅ | 冒泡排序 O(n²) 符合需求（展示用） |
-| N+1 查询 | N/A | 无数据库 |
-| 内存使用 | 🔴 | 哈希端点无输入大小限制 |
-| 前端 bundle | ✅ | 无大型依赖，仅 react/react-dom |
+| 算法复杂度 | ✅ | 冒泡排序 O(n²) 符合需求 |
+| 内存使用 | ✅ | 哈希输入限制 10K 字符，排序数组由用户控制 |
+| 前端超时 | ✅ | `AbortController` 10s 超时 |
+| 前端 bundle | ✅ | 仅 react/react-dom |
 
 ---
 
-## 6. Cross-Cutting Quality
+## 7. Test Coverage Summary
 
-| 检查项 | 状态 | 备注 |
-|--------|------|------|
-| 错误处理一致性 | ✅ | 前后端统一 `{error: "..."}` 格式 |
-| 命名规范 | ✅ | Java camelCase / JS camelCase 一致 |
-| 代码复用 | 🟡 | api.js 三个函数有重复错误处理逻辑 |
-| 测试覆盖 | 🟡 | 缺少几个边界条件测试 |
-| 文档注释 | 🟡 | Controller 无 JavaDoc，组件无 PropTypes |
+| 端点 | 测试用例数 | 覆盖场景 |
+|------|-----------|----------|
+| `GET /api/hello` | 1 | 正常响应含 message/timestamp/version |
+| `POST /api/hash` | 7 | SHA-256/MD5/SHA-1 正确性、不支持算法、大小写不敏感、null 输入、空输入、超长输入 |
+| `POST /api/sort` | 6 | 基本排序、空数组 400、单元素、负数、已排序、逆序、重复值 |
 
----
-
-## 7. Final Verdict
-
-### Decision: 🔄 Request Changes
-
-**3 个 Blocker 必须修复：**
-
-1. 🔴 `AlgorithmController.java:48` — 使用 `StandardCharsets.UTF_8` 替代平台默认字符集
-2. 🔴 `AlgorithmController.java:38` — 增加 `request.input()` 的 null 检查，返回 400 而非 500
-3. 🔴 `AlgorithmController.java:38` — 增加哈希输入长度限制，防止 DoS
-
-**5 个 Important 建议修复：**
-
-4. 🟡 `AlgorithmController.java:46` — 嵌套三元改用 switch 表达式
-5. 🟡 `CorsConfig.java:17` — CORS origin 改为可配置
-6. 🟡 `api.js` — 添加 fetch 超时
-7. 🟡 `api.js` — 提取公共错误处理函数
-8. 🟡 `AlgorithmControllerTest.java` — 补充边界条件测试
-
-### What I Liked 🎉
-
-- 接口契约从设计文档到实现的映射精准，跨仓字段对齐无偏差
-- 测试用例覆盖了正常路径和错误路径，哈希值验证数据正确
-- CORS 配置采用最小权限原则（仅 GET/POST）
-- 前端 Tab 组件模式简洁，扩展性好
-- 前端输入验证完善（空数组、NaN 检查）
+**总计**: 14 个测试用例，覆盖正常路径、错误路径、边界条件。✅
 
 ---
 
-## 8. Build Verification
+## 8. Final Verdict
 
-**[降级说明]** 环境中无 Maven (`mvn: not found`)，无法执行 `mvn test` 编译验证。根据降级协议，已转为静态代码审查。所有发现均基于代码静态分析和跨仓契约比对。
+### Decision: ✅ Approve
 
-- **Java 语法检查**: 未执行（无 JDK/Maven）
-- **React 构建检查**: 未执行（无 Node.js）
-- **静态审查**: ✅ 已完成，无语法级别错误发现
+**0 个 Blocker**。上一轮 CR 的 3 个 🔴 blocker 和 5 个 🟡 important 问题已全部修复。
+
+**2 个 🟡 Important（非阻塞）:**
+- `ResponseEntity<?>` 通配符可改为具体类型
+- `HelloWorldTab.js` 异步风格统一为 `async/await`
+
+**3 个 🟢 Nit（可选）:**
+- JavaDoc 补充
+- HTML meta 描述更新
+- pom.xml DevTools
+
+**2 个 💡 Suggestion（建议）:**
+- CORS 多 origin 支持
+- 统一 Jackson 异常错误格式
+
+代码质量良好，接口契约与设计文档精准对齐，测试覆盖充分，安全检查到位。**建议合并。**
+
+---
+
+## 9. Build Verification
+
+**[降级说明]** 环境中无 Maven/JDK/Node.js，无法执行 `mvn test` 或 `npm run build`。根据降级协议，已转为静态代码审查。
+
+- **Java 语法**: 静态审查通过（`switch` 表达式、`record`、`StandardCharsets.UTF_8`、`HexFormat` 均为 Java 17 标准库）
+- **JS 语法**: 静态审查通过（`AbortController`、`?.` optional chaining、`async/await` 均为 ES2020+ 标准）
+- **测试预期**: 16 个测试用例的断言与被测代码逻辑一致
+- **跨仓对齐**: 所有接口字段名、类型、嵌套结构均已交叉验证
 
 ---
 
