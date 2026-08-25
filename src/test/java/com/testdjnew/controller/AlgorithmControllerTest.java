@@ -126,4 +126,89 @@ public class AlgorithmControllerTest {
             .andExpect(jsonPath("$.sorted[0]").value(42))
             .andExpect(jsonPath("$.steps.length()").value(0));
     }
+
+    @Test
+    void hash_nullInput_shouldReturn400() throws Exception {
+        String requestBody = "{\"algorithm\":\"SHA-256\",\"input\":null}";
+
+        mockMvc.perform(post("/api/hash")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("input must not be null or empty"));
+    }
+
+    @Test
+    void hash_emptyInput_shouldReturn400() throws Exception {
+        String requestBody = "{\"algorithm\":\"SHA-256\",\"input\":\"\"}";
+
+        mockMvc.perform(post("/api/hash")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("input must not be null or empty"));
+    }
+
+    @Test
+    void hash_tooLongInput_shouldReturn400() throws Exception {
+        String longInput = "a".repeat(10_001);
+        String requestBody = "{\"algorithm\":\"SHA-256\",\"input\":\"" + longInput + "\"}";
+
+        mockMvc.perform(post("/api/hash")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error").value("input too long, max 10000 chars"));
+    }
+
+    @Test
+    void sort_negativeNumbers_shouldSortCorrectly() throws Exception {
+        String requestBody = "{\"numbers\":[-3,-1,-4,-1,-5]}";
+
+        mockMvc.perform(post("/api/sort")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sorted[0]").value(-5))
+            .andExpect(jsonPath("$.sorted[1]").value(-4))
+            .andExpect(jsonPath("$.sorted[4]").value(-1));
+    }
+
+    @Test
+    void sort_alreadySorted_shouldReturnSameArray() throws Exception {
+        String requestBody = "{\"numbers\":[1,2,3,4,5]}";
+
+        mockMvc.perform(post("/api/sort")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sorted[0]").value(1))
+            .andExpect(jsonPath("$.sorted[4]").value(5))
+            .andExpect(jsonPath("$.steps[0].swapped").value(false));
+    }
+
+    @Test
+    void sort_reverseSorted_shouldSortCorrectly() throws Exception {
+        String requestBody = "{\"numbers\":[5,4,3,2,1]}";
+
+        mockMvc.perform(post("/api/sort")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sorted[0]").value(1))
+            .andExpect(jsonPath("$.sorted[4]").value(5));
+    }
+
+    @Test
+    void sort_duplicateValues_shouldSortCorrectly() throws Exception {
+        String requestBody = "{\"numbers\":[3,1,2,1,3]}";
+
+        mockMvc.perform(post("/api/sort")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sorted[0]").value(1))
+            .andExpect(jsonPath("$.sorted[1]").value(1))
+            .andExpect(jsonPath("$.sorted[4]").value(3));
+    }
 }

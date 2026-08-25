@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.security.MessageDigest;
@@ -17,6 +18,8 @@ import java.util.HexFormat;
 @RestController
 @RequestMapping("/api")
 public class AlgorithmController {
+
+    private static final int MAX_HASH_INPUT_LENGTH = 10_000;
 
     @GetMapping("/hello")
     public Map<String, Object> hello() {
@@ -36,6 +39,15 @@ public class AlgorithmController {
 
     @PostMapping("/hash")
     public ResponseEntity<?> hash(@RequestBody HashRequest request) {
+        if (request.input() == null || request.input().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("input must not be null or empty"));
+        }
+        if (request.input().length() > MAX_HASH_INPUT_LENGTH) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("input too long, max " + MAX_HASH_INPUT_LENGTH + " chars"));
+        }
+
         String algo = request.algorithm().toUpperCase().replace("-", "");
         if (!algo.equals("MD5") && !algo.equals("SHA1") && !algo.equals("SHA256")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -43,9 +55,13 @@ public class AlgorithmController {
         }
 
         try {
-            String javaAlgo = algo.equals("SHA1") ? "SHA-1" : algo.equals("SHA256") ? "SHA-256" : "MD5";
+            String javaAlgo = switch (algo) {
+                case "SHA1" -> "SHA-1";
+                case "SHA256" -> "SHA-256";
+                default -> "MD5";
+            };
             MessageDigest md = MessageDigest.getInstance(javaAlgo);
-            byte[] digest = md.digest(request.input().getBytes());
+            byte[] digest = md.digest(request.input().getBytes(StandardCharsets.UTF_8));
             String hex = HexFormat.of().formatHex(digest);
 
             return ResponseEntity.ok(new HashResponse(
