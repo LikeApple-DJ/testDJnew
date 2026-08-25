@@ -1,0 +1,6 @@
+.superpowers/
+*.log
+.idea/
+*.iml
+dist/
+node_modules/
