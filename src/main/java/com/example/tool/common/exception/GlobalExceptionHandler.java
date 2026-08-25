@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器。
@@ -26,7 +25,7 @@ public class GlobalExceptionHandler {
      * 根据设计文档：
      * - input 为空 → TOOL_001
      * - array 为空 → TOOL_003
-     * - array 超长 → TOOL_004
+     * 注意：array 超长（@Size 失败）→ TOOL_004 在 handleValidationException 中单独处理。
      */
     private static final Map<String, String> VALIDATION_ERROR_CODE_MAP = Map.of(
             "input", "TOOL_001",
@@ -56,7 +55,17 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleValidationException(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getBindingResult().getFieldError();
         String fieldName = fieldError != null ? fieldError.getField() : "";
-        String errorCode = VALIDATION_ERROR_CODE_MAP.getOrDefault(fieldName, "TOOL_999");
+        String errorCode;
+        if (fieldError != null) {
+            String code = fieldError.getCode();
+            if ("array".equals(fieldName) && code != null && code.contains("Size")) {
+                errorCode = "TOOL_004";
+            } else {
+                errorCode = VALIDATION_ERROR_CODE_MAP.getOrDefault(fieldName, "TOOL_999");
+            }
+        } else {
+            errorCode = "TOOL_999";
+        }
         String message = fieldError != null ? fieldError.getDefaultMessage() : "参数校验失败";
         logger.warn("参数校验失败: code={}, field={}, message={}", errorCode, fieldName, message);
         return ApiResponse.error(errorCode, message);
