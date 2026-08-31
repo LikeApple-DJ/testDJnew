@@ -3,12 +3,13 @@ import HelloWorldTab from './HelloWorldTab';
 import HashTab from './HashTab';
 import BubbleSortTab from './BubbleSortTab';
 import WeatherTab from './WeatherTab';
-import type { TabKey, HelloWorldData, HashData, BubbleSortData, WeatherResponse } from '../types';
+import TodoTab from './TodoTab';
+import type { TabKey, HelloWorldData, HashData, BubbleSortData, WeatherResponse, TodoItem } from '../types';
 
 interface Props {
   activeTab: TabKey;
   onTabChange: (tab: TabKey) => void;
-  onResult: (tab: TabKey, data: HelloWorldData | HashData | BubbleSortData | WeatherResponse) => void;
+  onResult: (tab: TabKey, data: HelloWorldData | HashData | BubbleSortData | WeatherResponse | TodoItem) => void;
 }
 
 export default function AlgorithmTabs({ activeTab, onTabChange, onResult }: Props) {
@@ -32,6 +33,11 @@ export default function AlgorithmTabs({ activeTab, onTabChange, onResult }: Prop
       key: 'weather',
       label: '🌤️ 天气顾问',
       children: <WeatherTab onResult={(d) => onResult('weather', d)} />,
+    },
+    {
+      key: 'todo',
+      label: '📝 待办事项',
+      children: <TodoTab onResult={(d) => onResult('todo', d)} />,
     },
   ];
 

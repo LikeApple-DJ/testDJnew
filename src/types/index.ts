@@ -63,7 +63,20 @@ export interface WeatherResponse {
   outdoorStrategy: string;
 }
 
+// Todo 待办事项
+export interface TodoItem {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface CreateTodoRequest {
+  name: string;
+  description: string;
+}
+
 // 页面状态
-export type TabKey = 'helloworld' | 'hash' | 'bubblesort' | 'weather';
+export type TabKey = 'helloworld' | 'hash' | 'bubblesort' | 'weather' | 'todo';
 export type Dimension = 'personType' | 'level' | 'department';
 export type ChartType = 'line' | 'pie' | 'bar';

@@ -6,6 +6,7 @@ import type {
   MetricsResponse,
   WeatherResponse,
   Dimension,
+  TodoItem,
 } from '../types';
 
 const BASE_URL = '/api';
@@ -83,4 +84,14 @@ export async function fetchWeather(
   city: string = 'hangzhou'
 ): Promise<ApiResult<WeatherResponse>> {
   return request<WeatherResponse>(`/weather?city=${encodeURIComponent(city)}`);
+}
+
+export async function createTodo(
+  name: string,
+  description: string
+): Promise<ApiResult<TodoItem>> {
+  return request<TodoItem>('/todo', {
+    method: 'POST',
+    body: JSON.stringify({ name, description }),
+  });
 }
