@@ -3,11 +3,13 @@ import HelloTab from '../components/HelloTab';
 import HashTab from '../components/HashTab';
 import SortTab from '../components/SortTab';
 import ExportButton from '../components/ExportButton';
+import TodoTab from '../components/TodoTab';
 
 const TABS = [
   { key: 'hello', label: 'Hello World', component: HelloTab },
   { key: 'hash', label: 'SHA-256 Hash', component: HashTab },
   { key: 'sort', label: 'Bubble Sort', component: SortTab },
+  { key: 'todo', label: 'Todo', component: TodoTab },
 ];
 
 export default function Dashboard() {

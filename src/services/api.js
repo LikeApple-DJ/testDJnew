@@ -23,3 +23,7 @@ export function callBubbleSort(array) {
 export function exportTab(tab, resultData) {
   return api.post('/export', { tab, resultData }, { responseType: 'blob' });
 }
+
+export function createTodo(name, description) {
+  return api.post('/todos', { name, description });
+}
